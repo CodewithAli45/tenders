@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, 
@@ -11,9 +13,13 @@ import {
   Plus,
   Search,
   MoreVertical,
-  CheckCircle2
+  CheckCircle2,
+  Clock,
+  ExternalLink
 } from "lucide-react";
 import { NewTenderForm } from "./new-tender-form";
+import { TenderDetailView } from "./tender-detail-view";
+import axios from "axios";
 
 interface AdminDashboardProps {
   onClose?: () => void;
@@ -22,20 +28,40 @@ interface AdminDashboardProps {
 
 export function AdminDashboard({ onClose, isModal = false }: AdminDashboardProps) {
   const [isAddingTender, setIsAddingTender] = useState(false);
+  const [viewingTender, setViewingTender] = useState<any>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [newInternalId, setNewInternalId] = useState("");
+  const [tenders, setTenders] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleTenderAdded = ({ id }: { id: string }) => {
+  const fetchTenders = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get("/api/tenders");
+      setTenders(response.data);
+    } catch (err) {
+      console.error("Error fetching tenders:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTenders();
+  }, []);
+
+  const handleTenderAdded = (tender: any) => {
     setIsAddingTender(false);
-    setNewInternalId(id);
+    setNewInternalId(tender.internalId);
     setShowSuccess(true);
+    fetchTenders();
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
   return (
     <div className={`flex h-full w-full bg-background text-foreground overflow-hidden ${isModal ? 'rounded-2xl' : ''}`}>
-      {/* Sidebar - Collapses when adding tender on mobile */}
-      <aside className={`w-64 border-r border-black/5 dark:border-white/10 flex flex-col bg-black/2 dark:bg-white/2 backdrop-blur-md transition-all ${isAddingTender ? 'hidden lg:flex' : 'flex'}`}>
+      {/* Sidebar - Collapses when adding/viewing tender on mobile */}
+      <aside className={`w-64 border-r border-black/5 dark:border-white/10 flex flex-col bg-black/2 dark:bg-white/2 backdrop-blur-md transition-all ${isAddingTender || viewingTender ? 'hidden lg:flex' : 'flex'}`}>
         <div className="p-6 flex items-center gap-3 border-b border-black/5 dark:border-white/10">
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
             <LayoutDashboard className="h-5 w-5 text-white" />
@@ -45,15 +71,14 @@ export function AdminDashboard({ onClose, isModal = false }: AdminDashboardProps
         
         <nav className="flex-1 p-4 space-y-2">
           {[
-            { icon: LayoutDashboard, label: "Overview", active: !isAddingTender, onClick: () => setIsAddingTender(false) },
-            { icon: Users, label: "Users" },
-            { icon: FileText, label: "Tenders" },
-            { icon: BarChart3, label: "Analytics" },
-            { icon: Settings, label: "Settings" },
+            { id: 'overview', icon: LayoutDashboard, label: "Overview", active: !isAddingTender && !viewingTender },
+            { id: 'users', icon: Users, label: "Users" },
+            { id: 'tenders', icon: FileText, label: "Tenders", active: !!viewingTender },
+            { id: 'analytics', icon: BarChart3, label: "Analytics" },
+            { id: 'settings', icon: Settings, label: "Settings" },
           ].map((item) => (
             <button
               key={item.label}
-              onClick={item.onClick}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${
                 item.active 
                   ? "bg-primary text-white shadow-lg shadow-primary/20" 
@@ -101,6 +126,18 @@ export function AdminDashboard({ onClose, isModal = false }: AdminDashboardProps
               onSuccess={handleTenderAdded} 
             />
           </motion.div>
+        ) : viewingTender ? (
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex-1 overflow-hidden"
+          >
+            <TenderDetailView 
+              tender={viewingTender} 
+              onClose={() => setViewingTender(null)}
+              onUpdate={fetchTenders}
+            />
+          </motion.div>
         ) : (
           <div className="flex-1 flex flex-col overflow-hidden">
             <header className="h-16 border-b border-black/5 dark:border-white/10 flex items-center justify-between px-8 bg-background/50 backdrop-blur-md sticky top-0 z-10">
@@ -109,7 +146,7 @@ export function AdminDashboard({ onClose, isModal = false }: AdminDashboardProps
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input 
                     type="text" 
-                    placeholder="Search resources..." 
+                    placeholder="Search tenders..." 
                     className="w-full h-10 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-full pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                   />
                 </div>
@@ -138,17 +175,17 @@ export function AdminDashboard({ onClose, isModal = false }: AdminDashboardProps
               {/* Stats */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {[
-                  { label: "Total Revenue", value: "₹ 4.2 Cr", change: "+12%" },
-                  { label: "Active Users", value: "2,450", change: "+5%" },
-                  { label: "Completion Rate", value: "94%", change: "+2%" },
-                  { label: "System Uptime", value: "99.9%", change: "stable" },
+                  { label: "Total Tenders", value: tenders.length.toString(), change: "active" },
+                  { label: "Active Revenue", value: `₹ ${(tenders.reduce((acc, t) => acc + (t.tenderValue || 0), 0) / 10000000).toFixed(1)} Cr`, change: "est." },
+                  { label: "Pending Uploads", value: tenders.filter(t => !t.tenderDocuments?.length).length.toString(), change: "action needed" },
+                  { label: "System Health", value: "99.9%", change: "stable" },
                 ].map((stat) => (
                   <div key={stat.label} className="glass-card p-6 rounded-3xl">
                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">{stat.label}</p>
                     <div className="flex items-end justify-between">
                       <p className="text-2xl font-bold">{stat.value}</p>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        stat.change.startsWith('+') ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        stat.change === 'active' ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'
                       }`}>
                         {stat.change}
                       </span>
@@ -160,43 +197,79 @@ export function AdminDashboard({ onClose, isModal = false }: AdminDashboardProps
               {/* Table Area */}
               <div className="glass-card rounded-3xl overflow-hidden">
                 <div className="p-6 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
-                  <h3 className="font-bold text-lg">Recent Activities</h3>
-                  <button className="text-sm font-semibold text-primary hover:underline cursor-pointer">View All</button>
+                  <h3 className="font-bold text-lg">Manage Tenders</h3>
+                  <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    Last updated: Just now
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-black/2 dark:bg-white/2 border-b border-black/5 dark:border-white/10">
-                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">User</th>
-                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">Action</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">Tender ID</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">Title</th>
                         <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">Status</th>
-                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">Date</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">Due Date</th>
                         <th className="px-6 py-4"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <tr key={i} className="hover:bg-black/1 dark:hover:bg-white/1 transition-all">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-primary to-accent" />
-                              <span className="font-medium text-sm">User_{i}024</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-sm">Updated Tender #T-92{i}</td>
-                          <td className="px-6 py-4">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent">
-                              Success
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-muted-foreground">2 hours ago</td>
-                          <td className="px-6 py-4 text-right">
-                            <button className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg cursor-pointer">
-                              <MoreVertical className="h-4 w-4 text-muted-foreground" />
-                            </button>
+                      {isLoading ? (
+                        [1, 2, 3].map(i => (
+                          <tr key={i} className="animate-pulse">
+                            <td colSpan={5} className="px-6 py-8 h-16 bg-black/5 dark:bg-white/5" />
+                          </tr>
+                        ))
+                      ) : tenders.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground text-sm italic">
+                            No tenders found. Create one to get started.
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        tenders.map((tender) => (
+                          <tr 
+                            key={tender._id} 
+                            onClick={() => setViewingTender(tender)}
+                            className="hover:bg-black/1 dark:hover:bg-white/1 transition-all cursor-pointer group"
+                          >
+                            <td className="px-6 py-4">
+                              <span className="font-mono text-xs font-bold text-primary group-hover:underline">
+                                {tender.internalId}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex flex-col">
+                                <span className="font-bold text-sm truncate max-w-[300px]">{tender.title}</span>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[10px] font-medium text-muted-foreground bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded italic">
+                                    {tender.organization}
+                                  </span>
+                                  <span className="text-[10px] text-muted-foreground">₹ {tender.tenderValue.toLocaleString()}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                tender.tenderDocuments?.length 
+                                  ? 'bg-accent/10 text-accent' 
+                                  : 'bg-yellow-500/10 text-yellow-500'
+                              }`}>
+                                {tender.tenderDocuments?.length ? 'Documents Ready' : 'Pending Upload'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-xs text-muted-foreground">
+                              {new Date(tender.dueDate).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg">
+                                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
