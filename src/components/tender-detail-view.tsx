@@ -20,9 +20,10 @@ interface TenderDetailViewProps {
   tender: any;
   onClose: () => void;
   onUpdate: () => void;
+  readOnly?: boolean;
 }
 
-export function TenderDetailView({ tender, onClose, onUpdate }: TenderDetailViewProps) {
+export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }: TenderDetailViewProps) {
   const [formData, setFormData] = useState({ ...tender });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -104,7 +105,7 @@ export function TenderDetailView({ tender, onClose, onUpdate }: TenderDetailView
           </div>
           <div>
             <h2 className="text-xl font-bold">{tender.internalId}</h2>
-            <p className="text-xs text-muted-foreground">Manage details and documents</p>
+            <p className="text-xs text-muted-foreground">{readOnly ? "View details and documents" : "Manage details and documents"}</p>
           </div>
         </div>
         <button 
@@ -145,7 +146,8 @@ export function TenderDetailView({ tender, onClose, onUpdate }: TenderDetailView
                     name="organization"
                     value={formData.organization}
                     onChange={handleChange}
-                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    disabled={readOnly}
+                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none disabled:opacity-70"
                   />
                 </div>
                 <div className="space-y-2">
@@ -154,7 +156,8 @@ export function TenderDetailView({ tender, onClose, onUpdate }: TenderDetailView
                     name="category"
                     value={formData.category}
                     onChange={handleChange}
-                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
+                    disabled={readOnly}
+                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer disabled:opacity-70"
                   >
                     <option value="central">Central Govt</option>
                     <option value="state">State Govt</option>
@@ -170,7 +173,8 @@ export function TenderDetailView({ tender, onClose, onUpdate }: TenderDetailView
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  disabled={readOnly}
+                  className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none disabled:opacity-70"
                 />
               </div>
               
@@ -181,7 +185,8 @@ export function TenderDetailView({ tender, onClose, onUpdate }: TenderDetailView
                     name="tenderNo"
                     value={formData.tenderNo}
                     onChange={handleChange}
-                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    disabled={readOnly}
+                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none disabled:opacity-70"
                   />
                 </div>
                 <div className="space-y-2">
@@ -190,7 +195,8 @@ export function TenderDetailView({ tender, onClose, onUpdate }: TenderDetailView
                     name="portalId"
                     value={formData.portalId}
                     onChange={handleChange}
-                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    disabled={readOnly}
+                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none disabled:opacity-70"
                   />
                 </div>
               </div>
@@ -203,7 +209,8 @@ export function TenderDetailView({ tender, onClose, onUpdate }: TenderDetailView
                     name="tenderValue"
                     value={formData.tenderValue}
                     onChange={handleChange}
-                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none font-semibold"
+                    disabled={readOnly}
+                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none font-semibold disabled:opacity-70"
                   />
                 </div>
                 <div className="space-y-2">
@@ -213,7 +220,8 @@ export function TenderDetailView({ tender, onClose, onUpdate }: TenderDetailView
                     name="emdAmount"
                     value={formData.emdAmount}
                     onChange={handleChange}
-                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none font-semibold"
+                    disabled={readOnly}
+                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none font-semibold disabled:opacity-70"
                   />
                 </div>
               </div>
@@ -226,7 +234,8 @@ export function TenderDetailView({ tender, onClose, onUpdate }: TenderDetailView
                     name="dueDate"
                     value={formData.dueDate ? new Date(formData.dueDate).toISOString().split('T')[0] : ""}
                     onChange={handleChange}
-                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    disabled={readOnly}
+                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none disabled:opacity-70"
                   />
                 </div>
                 <div className="space-y-2">
@@ -235,7 +244,8 @@ export function TenderDetailView({ tender, onClose, onUpdate }: TenderDetailView
                     name="tenderType"
                     value={formData.tenderType}
                     onChange={handleChange}
-                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
+                    disabled={readOnly}
+                    className="w-full h-11 bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer disabled:opacity-70"
                   >
                     <option value="open">Open</option>
                     <option value="limited">Limited</option>
@@ -273,6 +283,7 @@ export function TenderDetailView({ tender, onClose, onUpdate }: TenderDetailView
                     </div>
                   ))}
                   
+                  {!readOnly && (
                     <div className="relative group/upload">
                       <input 
                         type="file" 
@@ -292,6 +303,7 @@ export function TenderDetailView({ tender, onClose, onUpdate }: TenderDetailView
                         )}
                       </div>
                     </div>
+                  )}
                 </div>
               </div>
 
@@ -310,18 +322,20 @@ export function TenderDetailView({ tender, onClose, onUpdate }: TenderDetailView
                       </div>
                     ))}
                     
-                    <div className="relative">
-                      <input 
-                        type="file" 
-                        onChange={(e) => handleFileUpload(e, 'corrigendum')}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                        disabled={isUploading}
-                      />
-                      <div className="p-4 border-2 border-dashed border-black/5 dark:border-white/10 rounded-xl flex items-center justify-center gap-2 hover:border-accent/30 transition-all">
-                        <Upload className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-xs font-bold text-muted-foreground">Upload Corrigendum</span>
+                    {!readOnly && (
+                      <div className="relative">
+                        <input 
+                          type="file" 
+                          onChange={(e) => handleFileUpload(e, 'corrigendum')}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          disabled={isUploading}
+                        />
+                        <div className="p-4 border-2 border-dashed border-black/5 dark:border-white/10 rounded-xl flex items-center justify-center gap-2 hover:border-accent/30 transition-all">
+                          <Upload className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-xs font-bold text-muted-foreground">Upload Corrigendum</span>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -337,13 +351,15 @@ export function TenderDetailView({ tender, onClose, onUpdate }: TenderDetailView
         >
           Close
         </button>
-        <button 
-          onClick={() => setShowVerifyPrompt(true)}
-          className="flex-[2] h-12 bg-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <Save className="h-4 w-4" />
-          Save & Verify
-        </button>
+        {!readOnly && (
+          <button 
+            onClick={() => setShowVerifyPrompt(true)}
+            className="flex-[2] h-12 bg-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Save className="h-4 w-4" />
+            Save & Verify
+          </button>
+        )}
       </div>
 
       {/* Verify Prompt Modal */}
