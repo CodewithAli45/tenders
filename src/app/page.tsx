@@ -15,18 +15,40 @@ import {
   PieChart,
   LayoutGrid,
   ChevronDown,
-  Phone
+  Phone,
+  Radio,
+  Activity,
+  Award,
+  AlertTriangle,
+  FileText,
+  Calculator,
+  Layers,
+  FileSpreadsheet,
+  ShieldCheck,
+  DollarSign,
+  CheckSquare,
+  HelpCircle,
+  FileCheck,
+  Clock,
+  Users,
+  TrendingUp,
+  AlertOctagon,
+  Sparkles,
+  Building,
+  X
 } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TenderDetailView } from "@/components/tender-detail-view";
-import { AdminDashboard } from "@/components/admin-dashboard";
 
 export default function Home() {
-  const [showAdminModal, setShowAdminModal] = useState(false);
   const [selectedTender, setSelectedTender] = useState<any | null>(null);
   const [activeFilter, setActiveFilter] = useState("All");
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("Recent");
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const navItems = [
     { label: "Home", href: "/" },
@@ -34,53 +56,99 @@ export default function Home() {
       label: "Tools", 
       href: "/tools",
       dropdown: [
-        { label: "PDF Manager", href: "/tools/pdf-manager" },
-        { label: "Calculator", href: "/tools/calculator" },
-        { label: "AutoCAD Viewer", href: "/tools/autocad-viewer" },
-        { label: "MS Excel", href: "/tools/ms-excel" },
+        { label: "PDF Manager", href: "/tools/pdf-manager", description: "Merge, split & edit tender documents", icon: FileText },
+        { label: "Calculator", href: "/tools/calculator", description: "EMD & cost estimation toolkit", icon: Calculator },
+        { label: "AutoCAD Viewer", href: "/tools/autocad-viewer", description: "Preview DWG & blueprint files", icon: Layers },
+        { label: "MS Excel", href: "/tools/ms-excel", description: "Export & process tender BOQs", icon: FileSpreadsheet },
       ]
     },
-    { label: "About US", href: "/about" },
+    { label: "About Us", href: "/about" },
     { 
       label: "Tenders", 
       href: "/tenders",
       dropdown: [
-        { label: "Live", href: "/tenders/live" },
-        { label: "Status", href: "/tenders/status" },
-        { label: "Award", href: "/tenders/award" },
-        { label: "Cancelled", href: "/tenders/cancelled" },
+        { label: "Live Tenders", href: "/tenders/live", description: "Active open bidding opportunities", icon: Radio },
+        { label: "Status Tracker", href: "/tenders/status", description: "Check evaluation & technical bids", icon: Activity },
+        { label: "Awarded Bids", href: "/tenders/award", description: "Recently finalized contract awards", icon: Award },
+        { label: "Cancelled", href: "/tenders/cancelled", description: "Archived & revoked tenders", icon: AlertTriangle },
       ]
     },
     { 
       label: "Services", 
       href: "/services",
       dropdown: [
-        { label: "Registration", href: "/services/registration" },
-        { label: "Cost Estimation", href: "/services/cost-estimation" },
-        { label: "Bid Preparation", href: "/services/bid-preparation" },
-        { label: "Reply of Clarification", href: "/services/reply-of-clarification" },
-        { label: "Contract Finalization", href: "/services/contract-finalization" },
-        { label: "Billing Schedule", href: "/services/billing-schedule" },
-        { label: "L2 Network", href: "/services/l2-network" },
-        { label: "Price Variation", href: "/services/price-variation" },
-        { label: "Extra Claim", href: "/services/extra-claim" },
+        { label: "Registration", href: "/services/registration", description: "Vendor & Portal Registration", icon: ShieldCheck },
+        { label: "Cost Estimation", href: "/services/cost-estimation", description: "Precision BOQ & financial rates", icon: DollarSign },
+        { label: "Bid Preparation", href: "/services/bid-preparation", description: "Technical & Financial Bidding", icon: CheckSquare },
+        { label: "Reply of Clarification", href: "/services/reply-of-clarification", description: "Pre-bid Query Drafting", icon: HelpCircle },
+        { label: "Contract Finalization", href: "/services/contract-finalization", description: "LOA & Agreement Assistance", icon: FileCheck },
+        { label: "Billing Schedule", href: "/services/billing-schedule", description: "RA Bill & Measurement Books", icon: Clock },
+        { label: "L2 Network", href: "/services/l2-network", description: "Sub-contractor & Vendor Connect", icon: Users },
+        { label: "Price Variation", href: "/services/price-variation", description: "WPI & Escalation Calculations", icon: TrendingUp },
+        { label: "Extra Claim", href: "/services/extra-claim", description: "Dispute & Deviation Filings", icon: AlertOctagon },
       ]
     },
   ];
 
+  const filterOptions = [
+    { name: "All", count: "1,280" },
+    { name: "State Govt", count: "540" },
+    { name: "Central Govt", count: "420" },
+    { name: "PSU", count: "210" },
+    { name: "Railway", count: "110" }
+  ];
+
+  // Mock Tender Data
+  const tendersList = [1, 2, 3, 4, 5, 6, 7, 8].map((item, index) => {
+    const year = new Date().getFullYear();
+    const tenderId = `GTME-${year}-000${100 + index * 7}`;
+    const tenderValueDecimal = 350000000.00 + (index * 12500000);
+    const emdValueDecimal = tenderValueDecimal * 0.01;
+    const categories = ["State Govt", "PSU", "Central Govt", "Railway"];
+    const currentCategory = categories[index % categories.length];
+    
+    return {
+      _id: item,
+      internalId: tenderId,
+      title: index % 2 === 0 
+        ? `Construction & Electrification of Smart Infrastructure Corridor - Phase ${item}`
+        : `Supply, Installation & Maintenance of Heavy Industrial Machinery - Unit ${item}`,
+      tenderValue: tenderValueDecimal,
+      emdAmount: emdValueDecimal,
+      dueDate: `2026-08-${10 + index * 2}`,
+      publishedDate: `2026-07-${20 + (index % 5)}`,
+      organization: index % 2 === 0 ? "BCD Jharkhand" : "MECON India Limited",
+      category: currentCategory,
+      department: index % 2 === 0 ? "Building Construction Dept" : "Heavy Engineering & PSU Services",
+      tenderNo: `T-REF-2026-${500 + index}`,
+      portalId: `P-ID-${8000 + index * 12}`,
+      tenderType: index === 0 ? "expiring" : "open",
+      statusText: index === 0 ? "EXPIRING SOON" : "LIVE",
+    };
+  });
+
+  const filteredTenders = tendersList.filter(t => {
+    const matchesFilter = activeFilter === "All" || t.category.toLowerCase().includes(activeFilter.toLowerCase());
+    const matchesSearch = searchQuery === "" || 
+      t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      t.internalId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.organization.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 relative flex flex-col">
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 relative flex flex-col font-sans">
       <AnimatePresence>
         {selectedTender && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+            exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8"
+            className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 md:p-6"
           >
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setSelectedTender(null)} />
-            <div className="relative w-full h-full max-w-[96%] max-h-[90vh] glass-card shadow-2xl overflow-hidden rounded-3xl">
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-md" onClick={() => setSelectedTender(null)} />
+            <div className="relative w-full h-full max-w-[98%] max-h-[92vh] glass-card shadow-2xl overflow-hidden rounded-3xl border border-border">
               <TenderDetailView 
                 tender={selectedTender} 
                 onClose={() => setSelectedTender(null)} 
@@ -91,48 +159,44 @@ export default function Home() {
           </motion.div>
         )}
 
-        {showAdminModal && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8"
-          >
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setShowAdminModal(false)} />
-            <div className="relative w-full h-full max-w-[96%] max-h-[90vh] glass-card shadow-2xl overflow-hidden rounded-3xl">
-              <AdminDashboard isModal={true} onClose={() => setShowAdminModal(false)} />
-            </div>
-          </motion.div>
-        )}
       </AnimatePresence>
 
-      {/* Marketing Header */}
-      <div className="h-8 w-full bg-primary text-white flex items-center justify-center px-[2%] text-[12px] sm:text-sm font-medium tracking-wide z-[60] fixed top-0">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse" />
-            Live and real time government tender management
+      {/* Top Marketing & Announcement Bar */}
+      <div className="h-9 w-full bg-slate-900 dark:bg-slate-950 text-slate-100 flex items-center justify-between px-[2%] text-xs font-medium border-b border-slate-800 z-[60] fixed top-0">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-semibold border border-blue-500/30">
+            <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+            ENTERPRISE HUB
           </span>
-          <span className="h-3 w-[1px] bg-white/20" />
-          <a href="tel:+919661221326" className="flex items-center gap-1.5 hover:text-white/80 transition-colors">
-            <Phone className="h-3 w-3" />
-            Contact: +91 9661221326
+          <span className="hidden sm:inline text-slate-300">Live & Real-time Government Tender Management System</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <a href="tel:+919661221326" className="flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors">
+            <Phone className="h-3.5 w-3.5 text-blue-400" />
+            <span className="hidden md:inline font-semibold">Helpline:</span> +91 9661221326
           </a>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="fixed top-8 z-50 w-full border-b border-black/5 dark:border-white/10 bg-background/80 backdrop-blur-xl">
+      {/* Main Navigation Bar */}
+      <nav className="fixed top-9 z-50 w-full border-b border-border/80 bg-card/90 backdrop-blur-xl shadow-xs">
         <div className="flex h-16 w-full items-center justify-between px-[2%] gap-4">
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
-              <Gavel className="h-6 w-6 text-white" />
+          
+          {/* Brand Logo */}
+          <a href="/" className="flex items-center gap-3 flex-shrink-0 group">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 shadow-md shadow-blue-500/20 group-hover:scale-105 transition-all">
+              <Gavel className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold tracking-tight hidden sm:block">GovTender Live</span>
-          </div>
+            <div className="flex flex-col">
+              <span className="text-lg font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
+                GovTender <span className="text-xs px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-bold uppercase tracking-wider">Pro</span>
+              </span>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest -mt-0.5">Government Bidding Portal</span>
+            </div>
+          </a>
 
-          <div className="hidden lg:flex items-center gap-4">
+          {/* Navigation Items with NON-TRANSPARENT Hover Dropdowns */}
+          <div className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => (
               <div 
                 key={item.label}
@@ -140,25 +204,61 @@ export default function Home() {
                 onMouseEnter={() => setActiveDropdown(item.label)}
                 onMouseLeave={() => setActiveDropdown(null)}
               >
-                <button className="flex items-center gap-1 px-4 py-2 rounded-lg text-lg font-medium text-muted-foreground hover:text-foreground dark:hover:bg-white/5 transition-all cursor-pointer">
+                <a
+                  href={item.href}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                    activeDropdown === item.label
+                      ? "bg-secondary text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                  }`}
+                >
                   {item.label}
-                  {item.dropdown && <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${activeDropdown === item.label ? 'rotate-180' : ''}`} />}
-                </button>
+                  {item.dropdown && (
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${activeDropdown === item.label ? 'rotate-180 text-primary' : ''}`} />
+                  )}
+                </a>
 
+                {/* SOLID OPAQUE DROPDOWN MENU */}
                 <AnimatePresence>
                   {item.dropdown && activeDropdown === item.label && (
                     <motion.div
-                      className="absolute top-full left-0 mt-1 w-64 rounded-2xl border border-black/5 dark:border-white/10 py-2 shadow-2xl z-[70] overflow-hidden"
+                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                      transition={{ duration: 0.15, ease: "easeOut" }}
+                      className="absolute top-full left-0 mt-1.5 w-80 rounded-2xl dropdown-popover p-2 shadow-2xl z-[100] border border-border bg-card text-card-foreground"
                     >
-                      {item.dropdown.map((subItem) => (
-                        <a
-                          key={subItem.label}
-                          href={subItem.href}
-                          className="flex items-center px-4 py-2.5 text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
-                        >
-                          {subItem.label}
-                        </a>
-                      ))}
+                      <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/60 mb-1 flex items-center justify-between">
+                        <span>{item.label} Modules</span>
+                        <Sparkles className="h-3 w-3 text-primary" />
+                      </div>
+                      <div className="space-y-0.5">
+                        {item.dropdown.map((subItem) => {
+                          const IconComponent = subItem.icon || FileText;
+                          return (
+                            <a
+                              key={subItem.label}
+                              href={subItem.href}
+                              className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-primary/10 hover:text-primary transition-all group/item cursor-pointer"
+                            >
+                              <div className="h-8 w-8 rounded-lg bg-secondary group-hover/item:bg-primary/20 flex items-center justify-center text-muted-foreground group-hover/item:text-primary transition-colors flex-shrink-0 mt-0.5">
+                                <IconComponent className="h-4 w-4" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-bold text-foreground group-hover/item:text-primary flex items-center justify-between">
+                                  <span>{subItem.label}</span>
+                                  <ArrowUpRight className="h-3 w-3 opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                                </div>
+                                {subItem.description && (
+                                  <p className="text-[11px] text-muted-foreground group-hover/item:text-primary/80 line-clamp-1 mt-0.5">
+                                    {subItem.description}
+                                  </p>
+                                )}
+                              </div>
+                            </a>
+                          );
+                        })}
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -166,232 +266,296 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="flex items-center gap-4">
-            <button className="relative rounded-full p-2 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
-              <Bell className="h-5 w-5 text-muted-foreground" />
-              <span className="pointer-events-none absolute top-2.5 right-2.5 flex h-1.5 w-1.5 rounded-full bg-accent" />
-            </button>
+          {/* Action Header Controls */}
+          <div className="flex items-center gap-3">
+            {/* Notification Popover Toggle */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative rounded-xl p-2.5 hover:bg-secondary border border-border text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                title="Notifications"
+              >
+                <Bell className="h-4 w-4" />
+                <span className="pointer-events-none absolute top-2 right-2 flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              </button>
+
+              <AnimatePresence>
+                {showNotifications && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                    className="absolute right-0 top-full mt-2 w-80 rounded-2xl dropdown-popover p-4 shadow-2xl z-[100] border border-border bg-card"
+                  >
+                    <div className="flex items-center justify-between pb-3 border-b border-border">
+                      <h4 className="text-xs font-bold uppercase tracking-wider">Live Alerts</h4>
+                      <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full">3 New</span>
+                    </div>
+                    <div className="space-y-2 py-2">
+                      <div className="p-2.5 rounded-xl bg-secondary/50 text-xs space-y-1">
+                        <p className="font-semibold text-foreground">New Corrigendum Issued</p>
+                        <p className="text-[11px] text-muted-foreground">GTME-2026-000100 updated tender document.</p>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-secondary/50 text-xs space-y-1">
+                        <p className="font-semibold text-foreground">Technical Bid Opening</p>
+                        <p className="text-[11px] text-muted-foreground">BCD Jharkhand bid evaluation starts today.</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <ThemeToggle />
-            <button 
-              onClick={() => setShowAdminModal(true)}
-              className="group flex h-10 w-10 items-center justify-center rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-primary hover:border-primary transition-all cursor-pointer"
-              title="Admin Dashboard"
+
+            {/* Admin Dashboard Launch Button */}
+            <Link
+              href="/admin"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold text-xs shadow-md hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-all cursor-pointer"
             >
-              <Settings className="h-5 w-5 text-muted-foreground dark:text-zinc-400 group-hover:text-white group-hover:rotate-90 transition-all duration-300" />
-            </button>
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Admin Portal</span>
+            </Link>
           </div>
         </div>
       </nav>
 
-      {/* Main Layout Container */}
-      <div className="flex w-full flex-1 pt-24 px-[2%]">
-        {/* Left Sidebar */}
-        <aside className="fixed left-[2%] top-24 hidden h-[calc(100vh-6rem)] w-64 flex-col border-r border-black/5 dark:border-white/10 p-6 xl:flex">
-          <div className="space-y-8">
-            {/* Quick Filters Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                <Filter className="h-3 w-3" />
-                <span>Quick Filters</span>
+      {/* Main Full-Screen Layout Container */}
+      <div className="flex w-full flex-1 pt-28 px-[2%] gap-6">
+        
+        {/* Left Enterprise Sidebar */}
+        <aside className="fixed left-[2%] top-28 hidden h-[calc(100vh-8rem)] w-64 flex-col border border-border rounded-2xl bg-card p-5 xl:flex shadow-xs overflow-y-auto">
+          <div className="space-y-6">
+            
+            {/* Sector Quick Filters */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                <span className="flex items-center gap-2">
+                  <Filter className="h-3.5 w-3.5 text-primary" />
+                  Category Filter
+                </span>
               </div>
               <div className="space-y-1">
-                {["All", "State Govt", "Central Govt", "PSU", "Railway"].map((tag) => (
+                {filterOptions.map((item) => (
                   <button 
-                    key={tag} 
-                    onClick={() => setActiveFilter(tag)}
-                    className={`w-full text-left px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${
-                      activeFilter === tag 
-                        ? "bg-primary text-white shadow-lg shadow-primary/20" 
-                        : "hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground hover:text-foreground"
+                    key={item.name} 
+                    onClick={() => setActiveFilter(item.name)}
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-between ${
+                      activeFilter === item.name 
+                        ? "bg-primary text-white shadow-md shadow-primary/20" 
+                        : "hover:bg-secondary text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {tag}
+                    <span>{item.name}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold ${
+                      activeFilter === item.name ? "bg-white/20 text-white" : "bg-secondary text-muted-foreground"
+                    }`}>
+                      {item.count}
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
 
+            <div className="h-[1px] w-full bg-border" />
+
             {/* Tender Tools Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                <LayoutGrid className="h-3 w-3" />
-                <span>Tender Tools</span>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                <LayoutGrid className="h-3.5 w-3.5 text-primary" />
+                <span>Quick Modules</span>
               </div>
               <div className="space-y-1">
                 {[
-                  { icon: Star, label: "Starred Bids" },
-                  { icon: History, label: "My Bids" },
-                  { icon: Archive, label: "Archived" },
-                  { icon: PieChart, label: "Analytics" },
+                  { icon: Star, label: "Starred Bids", count: "8" },
+                  { icon: History, label: "My Tracked Bids", count: "14" },
+                  { icon: Archive, label: "Archived Contracts", count: "120" },
+                  { icon: PieChart, label: "Analytics & Export", count: "Pro" },
                 ].map((item) => (
                   <button 
                     key={item.label}
-                    className="w-full text-left px-4 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5 hover:text-foreground transition-all cursor-pointer flex items-center gap-3"
+                    className="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all cursor-pointer flex items-center justify-between"
                   >
-                    <item.icon className="h-4 w-4 opacity-70" />
-                    {item.label}
+                    <div className="flex items-center gap-2.5">
+                      <item.icon className="h-3.5 w-3.5 text-primary/80" />
+                      <span>{item.label}</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-muted-foreground">{item.count}</span>
                   </button>
                 ))}
               </div>
             </div>
           </div>
 
+          {/* Enterprise Hub Callout */}
           <div className="mt-auto pt-6">
-            <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 p-4 border border-primary/10">
-              <p className="text-xs font-bold text-primary mb-1">PRO HUB</p>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">Unlock advanced analytics and bulk tender exports.</p>
-              <button className="mt-3 w-full py-2 bg-primary text-white rounded-lg text-xs font-bold hover:scale-105 transition-all">Upgrade Now</button>
+            <div className="rounded-xl bg-gradient-to-br from-blue-600/10 via-indigo-600/10 to-emerald-600/10 p-4 border border-blue-500/20 text-card-foreground">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="h-2 w-2 rounded-full bg-blue-500 animate-ping" />
+                <p className="text-xs font-extrabold text-primary uppercase tracking-wider">GovTender API</p>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">Automated ERP integration & custom tender webhooks available.</p>
+              <button className="mt-3 w-full py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-blue-600 transition-all shadow-sm">
+                Request API Key
+              </button>
             </div>
           </div>
         </aside>
 
-        {/* Home Feed Content */}
-        <main className="flex-1 px-6 xl:ml-64 py-10">
-          <div className="w-full">
-            {/* Stats Overview */}
-            {/* <div className="mb-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
+        {/* Main Content Area (Full Screen Responsive width) */}
+        <main className="flex-1 xl:ml-70 pb-16">
+          <div className="w-full space-y-6">
+            
+            {/* Metrics & Analytics Overview Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: "Active Tenders", value: "1,280", icon: Building2, color: "text-primary" },
-                { label: "Expiring Today", value: "12", icon: Bell, color: "text-accent" },
-                { label: "Drafted Bids", value: "4", icon: Gavel, color: "text-muted-foreground dark:text-white" },
+                { label: "Active Tenders", value: "1,280", icon: Building2, change: "+12% this week", color: "text-blue-500" },
+                { label: "Pipeline Value", value: "₹3,450 Cr", icon: DollarSign, change: "Updated Live", color: "text-emerald-500" },
+                { label: "Expiring Today", value: "12 Bids", icon: Clock, change: "Action Required", color: "text-amber-500" },
+                { label: "Finalized Awards", value: "84 Bids", icon: Award, change: "+5 today", color: "text-indigo-500" },
               ].map((stat, i) => (
                 <motion.div
                   key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="glass-card flex items-center gap-4 rounded-3xl p-6 border border-black/5 dark:border-white/5"
+                  transition={{ delay: i * 0.05 }}
+                  className="glass-card rounded-2xl p-4 border border-border flex items-center justify-between"
                 >
-                  <div className={`rounded-2xl bg-black/5 dark:bg-white/5 p-4 ${stat.color}`}>
-                    <stat.icon className="h-6 w-6" />
-                  </div>
                   <div>
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-                    <p className="text-2xl font-bold">{stat.value}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{stat.label}</p>
+                    <p className="text-2xl font-black tracking-tight text-foreground mt-1">{stat.value}</p>
+                    <p className="text-[10px] font-semibold text-emerald-500 mt-1 flex items-center gap-1">
+                      <span>{stat.change}</span>
+                    </p>
+                  </div>
+                  <div className={`h-11 w-11 rounded-xl bg-secondary flex items-center justify-center ${stat.color}`}>
+                    <stat.icon className="h-5 w-5" />
                   </div>
                 </motion.div>
               ))}
-            </div> */}
+            </div>
 
-            {/* Content Feed Header */}
-            <div className="flex items-center justify-between mb-6 gap-4">
-              <h2 className="text-xl font-bold flex items-center gap-3 whitespace-nowrap">
-                <span className="h-8 w-1 bg-primary rounded-full" />
-                Latest Opportunities
-              </h2>
+            {/* Filter, Search & Header Bar */}
+            <div className="glass-card rounded-2xl p-4 border border-border flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="h-8 w-1 bg-primary rounded-full" />
+                <h2 className="text-lg font-bold tracking-tight text-foreground whitespace-nowrap">
+                  Live Opportunities ({filteredTenders.length})
+                </h2>
+              </div>
               
-              <div className="flex-1 max-w-xl mx-4">
+              {/* Search Bar Input */}
+              <div className="flex-1 w-full max-w-xl">
                 <div className="relative flex items-center">
-                  <Search className="absolute left-4 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3.5 h-4 w-4 text-muted-foreground" />
                   <input
                     type="text"
-                    placeholder="Search by ID, department, or keyword..."
-                    className="h-12 w-full rounded-2xl bg-black/5 dark:bg-white/5 pl-11 pr-4 text-sm border border-black/5 dark:border-white/10 outline-none transition-all focus:border-primary/50 focus:ring-4 focus:ring-primary/10"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search tenders by ID, department, location or keyword..."
+                    className="h-11 w-full rounded-xl bg-secondary pl-10 pr-10 text-xs font-semibold border border-border outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 p-1 rounded-full hover:bg-card text-muted-foreground"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-muted-foreground">Sort by:</span>
-                <select className="bg-transparent text-xs font-bold outline-none cursor-pointer hover:text-primary transition-colors">
-                  <option>Recent</option>
-                  <option>Value: High to Low</option>
-                  <option>Due Date</option>
+              {/* Sort Dropdown */}
+              <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+                <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">Sort By:</span>
+                <select 
+                  value={sortBy} 
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-secondary text-xs font-semibold px-3 py-2 rounded-xl border border-border outline-none cursor-pointer hover:border-primary transition-all text-foreground"
+                >
+                  <option value="Recent">Recent First</option>
+                  <option value="ValueHigh">Value: High to Low</option>
+                  <option value="DueDate">Due Date: Earliest</option>
                 </select>
               </div>
             </div>
-              {/* card details  */}
-            <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-              {[1, 2, 3, 4, 5, 6].map((item, index) => {
-                const year = new Date().getFullYear();
-                const tenderId = `GTME-${year}-000${100 + index * 7}`;
-                const tenderValueDecimal = 350000000.00;
-                const emdValueDecimal = tenderValueDecimal * 0.01;
-                
-                const tender = {
-                  _id: item,
-                  internalId: tenderId,
-                  title: `Construction of Smart City Infrastructure - Phase ${item}`,
-                  tenderValue: tenderValueDecimal,
-                  emdAmount: emdValueDecimal,
-                  dueDate: "2024-04-15",
-                  publishedDate: "2024-03-24",
-                  organization: index % 2 === 0 ? "BCD Jharkhand" : "MECON",
-                  category: index % 2 === 0 ? "state" : "psu",
-                  department: index % 2 === 0 ? "BCD Jharkhand" : "MECON",
-                  tenderNo: `T-REF-${index + 500}`,
-                  portalId: `P-ID-${index + 8000}`,
-                  tenderType: "open"
-                };
 
-                return (
-                  <motion.div
-                    key={item}
-                    whileHover={{ y: -2 }}
-                    onClick={() => setSelectedTender(tender)}
-                    className="glass-card group cursor-pointer overflow-hidden rounded-2xl p-4 transition-all hover:bg-black/[0.02] dark:hover:bg-white/[0.03] border border-black/5 dark:border-white/10"
-                  >
-                    <div className="space-y-3">
-                      {/* Row 1: ID, due date, published date */}
-                      <div className="flex items-center justify-between text-[11px] font-bold">
-                        <div className="flex items-center gap-3">
-                          <span className="text-primary uppercase tracking-tight">ID: {tenderId}</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-accent/10 text-accent">
-                            <span className="uppercase">Due:</span>
-                            <span>{new Date(tender.dueDate).toLocaleDateString()}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-muted-foreground/60">
-                            <span className="uppercase font-medium">Published:</span>
-                            <span>{new Date(tender.publishedDate).toLocaleDateString()}</span>
-                          </div>
-                        </div>
+            {/* Opportunities Feed Grid (Full Screen Coverage) */}
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {filteredTenders.map((tender) => (
+                <motion.div
+                  key={tender._id}
+                  whileHover={{ y: -3 }}
+                  onClick={() => setSelectedTender(tender)}
+                  className="glass-card group cursor-pointer rounded-2xl p-5 border border-border hover:border-primary/50 transition-all shadow-xs hover:shadow-xl flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    {/* Header Row: Tender ID & Status Badge */}
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-mono font-bold tracking-wide border border-primary/20">
+                          {tender.internalId}
+                        </span>
+                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold tracking-wider border ${
+                          tender.tenderType === 'expiring' 
+                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' 
+                            : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                        }`}>
+                          {tender.statusText}
+                        </span>
                       </div>
 
-                      {/* Row 2: Title */}
-                      <div>
-                        <h2 className="text-md font-bold group-hover:text-primary transition-colors leading-snug line-clamp-1">
-                          Title: {tender.title}
-                        </h2>
-                      </div>
-
-                      {/* Row 3: Tender Value and EMD */}
-                      <div className="flex items-center gap-8 border-t border-black/5 dark:border-white/5 pt-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tender Value:</span>
-                          <span className="text-sm font-bold">Rs. {tender.tenderValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">EMD:</span>
-                          <span className="text-sm font-bold">Rs. {tender.emdAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                        </div>
-                      </div>
-
-                      {/* Row 4: Department or Organization */}
-                      <div className="flex items-center justify-between mt-1">
-                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-medium">
-                          {index % 2 === 0 ? (
-                            <>
-                              <span className="font-bold text-foreground">Department:</span>
-                              <span>{tender.department}, {tender.category}</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="font-bold text-foreground">Organization:</span>
-                              <span>{tender.organization}, {tender.category}</span>
-                            </>
-                          )}
-                        </div>
-                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-black/5 dark:bg-white/5 group-hover:bg-primary group-hover:text-white transition-all">
-                          <ArrowUpRight className="h-3.5 w-3.5" />
-                        </div>
+                      <div className="flex items-center gap-3 text-[11px]">
+                        <span className="text-muted-foreground">Due:</span>
+                        <span className="font-semibold text-foreground bg-secondary px-2 py-0.5 rounded-md">
+                          {tender.dueDate}
+                        </span>
                       </div>
                     </div>
-                  </motion.div>
-                );
-              })}
+
+                    {/* Title */}
+                    <div>
+                      <h3 className="text-base font-bold text-foreground group-hover:text-primary transition-colors leading-snug line-clamp-2">
+                        {tender.title}
+                      </h3>
+                    </div>
+
+                    {/* Value & EMD Highlights */}
+                    <div className="grid grid-cols-2 gap-4 py-2 px-3 rounded-xl bg-secondary/50 border border-border/50">
+                      <div>
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground block">Tender Value</span>
+                        <span className="text-sm font-black text-foreground">
+                          ₹ {(tender.tenderValue / 10000000).toFixed(2)} Cr
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground block">EMD Amount</span>
+                        <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                          ₹ {(tender.emdAmount / 100000).toFixed(2)} Lakh
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Department & Footer Details */}
+                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Building className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                        <span className="font-semibold text-foreground truncate">{tender.organization}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-secondary font-bold text-muted-foreground flex-shrink-0">
+                          {tender.category}
+                        </span>
+                      </div>
+                      
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-foreground group-hover:bg-primary group-hover:text-white transition-all flex-shrink-0">
+                        <ArrowUpRight className="h-4 w-4" />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
             </section>
+
           </div>
         </main>
       </div>

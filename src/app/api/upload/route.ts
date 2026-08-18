@@ -1,50 +1,23 @@
 import { NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { supabaseRequest, supabaseUrl } from "@/lib/supabase-server";
 
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_URL?.split("://")[1].split(":")[0],
-  api_secret: process.env.CLOUDINARY_URL?.split(":")[2].split("@")[0],
-});
-
-export async function POST(req: Request) {
+export async function POST(request: Request) {
+  if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Admin authentication required" }, { status: 401 });
   try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
-    const tenderId = formData.get("tenderId") as string;
-    const type = formData.get("type") as string; // 'document' or 'corrigendum'
-
-    if (!file || !tenderId) {
-      return NextResponse.json(
-        { error: "File and Tender ID are required" },
-        { status: 400 }
-      );
-    }
-
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    return new Promise<NextResponse>((resolve) => {
-      cloudinary.uploader.upload_stream(
-        {
-          folder: `tenders/${tenderId}`,
-          resource_type: "auto",
-        },
-        (error, result) => {
-          if (error) {
-            console.error("Cloudinary upload error:", error);
-            resolve(NextResponse.json({ error: "Upload failed" }, { status: 500 }));
-          } else {
-            resolve(NextResponse.json({ url: result?.secure_url }));
-          }
-        }
-      ).end(buffer);
-    });
-  } catch (error: any) {
-    console.error("Upload error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to upload file" },
-      { status: 500 }
-    );
-  }
+    const formData = await request.formData();
+    const file = formData.get("file") as File | null;
+    const tenderId = String(formData.get("tenderId") || "");
+    const type = formData.get("type") === "corrigendum" ? "corrigendum" : "document";
+    if (!file || !tenderId) return NextResponse.json({ error: "File and tender ID are required" }, { status: 400 });
+    const tenderResponse = await supabaseRequest(`/rest/v1/tenders?select=id&internal_id=eq.${encodeURIComponent(tenderId)}&limit=1`);
+    const tender = (await tenderResponse.json())[0];
+    if (!tender) return NextResponse.json({ error: "Tender not found" }, { status: 404 });
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${tender.id}/${Date.now()}-${safeName}`;
+    await supabaseRequest(`/storage/v1/object/tender-attachments/${path}`, { method: "POST", headers: { "Content-Type": file.type || "application/octet-stream", "x-upsert": "false" }, body: Buffer.from(await file.arrayBuffer()) });
+    const url = `${supabaseUrl()}/storage/v1/object/public/tender-attachments/${path}`;
+    await supabaseRequest("/rest/v1/attachments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tender_id: tender.id, file_name: file.name, file_path: path, file_url: url, attachment_type: type }) });
+    return NextResponse.json({ url });
+  } catch (error) { console.error("Attachment upload error:", error); return NextResponse.json({ error: "Failed to upload attachment" }, { status: 500 }); }
 }

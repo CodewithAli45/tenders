@@ -34,3 +34,19 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# GovTender Hub
+
+## Admin login setup
+
+1. In your Supabase project's SQL Editor, run [the admin access migration](./supabase/migrations/20260818000000_admin_access.sql) and [the admin data migration](./supabase/migrations/20260818010000_admin_data.sql).
+2. Add these values to `.env.local`. In Supabase **Settings → API**, use the server-only **Secret key** (`sb_secret_…`), or the legacy `service_role` key. Do not use a Publishable (`sb_publishable_…`) or anon key:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+ADMIN_SESSION_SECRET=your-random-32-byte-secret
+```
+
+3. Restart the app and visit `/admin`. On the first visit, create and confirm the admin password. It is then stored as a salted scrypt hash in Supabase. The admin session lasts 12 hours and is stored in an HTTP-only cookie.
+
+The migration enables RLS and prevents browser roles from reading password data. Password verification runs only through the server with Supabase's service-role key.
