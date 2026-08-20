@@ -1,4 +1,5 @@
 import { ArrowLeft, Briefcase } from "lucide-react";
+import Link from "next/link";
 
 export default async function ServicePage({ params }: { params: Promise<{ service: string }> }) {
   const { service } = await params;
@@ -7,10 +8,10 @@ export default async function ServicePage({ params }: { params: Promise<{ servic
   return (
     <div className="min-h-screen bg-background p-[2%] pt-32">
       <div className="max-w-4xl mx-auto space-y-8">
-        <a href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
           <ArrowLeft className="h-4 w-4" />
           Back to Home
-        </a>
+        </Link>
         <div className="flex items-center justify-between">
           <h1 className="text-4xl font-bold tracking-tight">{serviceName}</h1>
           <span className="bg-primary/10 text-primary px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">Expert Service</span>
@@ -27,7 +28,7 @@ export default async function ServicePage({ params }: { params: Promise<{ servic
             <div className="space-y-4">
               <h3 className="font-bold flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-primary" />
-                What's Included
+                What&apos;s Included
               </h3>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {["Expert Consultation", "Technical Documentation", "Compliance Review", "Strategy Development"].map((item) => (

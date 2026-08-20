@@ -1,4 +1,5 @@
 import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default async function ToolPage({ params }: { params: Promise<{ tool: string }> }) {
   const { tool } = await params;
@@ -7,10 +8,10 @@ export default async function ToolPage({ params }: { params: Promise<{ tool: str
   return (
     <div className="min-h-screen bg-background p-[2%] pt-32">
       <div className="max-w-4xl mx-auto space-y-8">
-        <a href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
           <ArrowLeft className="h-4 w-4" />
           Back to Home
-        </a>
+        </Link>
         <div className="flex items-center justify-between">
           <h1 className="text-4xl font-bold tracking-tight">{toolName}</h1>
           <span className="bg-primary/10 text-primary px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">Professional Tool</span>

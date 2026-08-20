@@ -1,13 +1,12 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Search, 
-  Bell, 
-  Building2, 
-  Gavel, 
-  ArrowUpRight, 
-  Filter, 
+import {
+  Search,
+  Bell,
+  Building2,
+  Gavel,
+  ArrowUpRight,
   Settings,
   Star,
   History,
@@ -34,26 +33,46 @@ import {
   TrendingUp,
   AlertOctagon,
   Sparkles,
-  Building,
   X
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TenderDetailView } from "@/components/tender-detail-view";
 
+interface Tender {
+  _id: string;
+  internalId: string;
+  title: string;
+  organization: string;
+  tenderValue: number;
+  tenderNo: string;
+  portalId: string;
+  emdAmount: number;
+  dueDate: string;
+}
+
 export default function Home() {
-  const [selectedTender, setSelectedTender] = useState<any | null>(null);
-  const [activeFilter, setActiveFilter] = useState("All");
+  const [selectedTender, setSelectedTender] = useState<Tender | null>(null);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("Recent");
   const [showNotifications, setShowNotifications] = useState(false);
+  const [tenders, setTenders] = useState<Tender[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/public/tenders")
+      .then((res) => res.json())
+      .then((data) => setTenders(Array.isArray(data) ? data : []))
+      .catch(() => setTenders([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   const navItems = [
     { label: "Home", href: "/" },
-    { 
-      label: "Tools", 
+    {
+      label: "Tools",
       href: "/tools",
       dropdown: [
         { label: "PDF Manager", href: "/tools/pdf-manager", description: "Merge, split & edit tender documents", icon: FileText },
@@ -63,8 +82,8 @@ export default function Home() {
       ]
     },
     { label: "About Us", href: "/about" },
-    { 
-      label: "Tenders", 
+    {
+      label: "Tenders",
       href: "/tenders",
       dropdown: [
         { label: "Live Tenders", href: "/tenders/live", description: "Active open bidding opportunities", icon: Radio },
@@ -73,8 +92,8 @@ export default function Home() {
         { label: "Cancelled", href: "/tenders/cancelled", description: "Archived & revoked tenders", icon: AlertTriangle },
       ]
     },
-    { 
-      label: "Services", 
+    {
+      label: "Services",
       href: "/services",
       dropdown: [
         { label: "Registration", href: "/services/registration", description: "Vendor & Portal Registration", icon: ShieldCheck },
@@ -90,51 +109,16 @@ export default function Home() {
     },
   ];
 
-  const filterOptions = [
-    { name: "All", count: "1,280" },
-    { name: "State Govt", count: "540" },
-    { name: "Central Govt", count: "420" },
-    { name: "PSU", count: "210" },
-    { name: "Railway", count: "110" }
-  ];
-
-  // Mock Tender Data
-  const tendersList = [1, 2, 3, 4, 5, 6, 7, 8].map((item, index) => {
-    const year = new Date().getFullYear();
-    const tenderId = `GTME-${year}-000${100 + index * 7}`;
-    const tenderValueDecimal = 350000000.00 + (index * 12500000);
-    const emdValueDecimal = tenderValueDecimal * 0.01;
-    const categories = ["State Govt", "PSU", "Central Govt", "Railway"];
-    const currentCategory = categories[index % categories.length];
-    
-    return {
-      _id: item,
-      internalId: tenderId,
-      title: index % 2 === 0 
-        ? `Construction & Electrification of Smart Infrastructure Corridor - Phase ${item}`
-        : `Supply, Installation & Maintenance of Heavy Industrial Machinery - Unit ${item}`,
-      tenderValue: tenderValueDecimal,
-      emdAmount: emdValueDecimal,
-      dueDate: `2026-08-${10 + index * 2}`,
-      publishedDate: `2026-07-${20 + (index % 5)}`,
-      organization: index % 2 === 0 ? "BCD Jharkhand" : "MECON India Limited",
-      category: currentCategory,
-      department: index % 2 === 0 ? "Building Construction Dept" : "Heavy Engineering & PSU Services",
-      tenderNo: `T-REF-2026-${500 + index}`,
-      portalId: `P-ID-${8000 + index * 12}`,
-      tenderType: index === 0 ? "expiring" : "open",
-      statusText: index === 0 ? "EXPIRING SOON" : "LIVE",
-    };
-  });
-
-  const filteredTenders = tendersList.filter(t => {
-    const matchesFilter = activeFilter === "All" || t.category.toLowerCase().includes(activeFilter.toLowerCase());
-    const matchesSearch = searchQuery === "" || 
-      t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredTenders = tenders.filter((t) => {
+    const matchesSearch = !searchQuery ||
       t.internalId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.organization.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+      t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.tenderNo?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
   });
+
+  const totalValue = tenders.reduce((sum, t) => sum + (t.tenderValue || 0), 0);
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 relative flex flex-col font-sans">
@@ -149,16 +133,15 @@ export default function Home() {
           >
             <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-md" onClick={() => setSelectedTender(null)} />
             <div className="relative w-full h-full max-w-[98%] max-h-[92vh] glass-card shadow-2xl overflow-hidden rounded-3xl border border-border">
-              <TenderDetailView 
-                tender={selectedTender} 
-                onClose={() => setSelectedTender(null)} 
-                onUpdate={() => {}} 
+              <TenderDetailView
+                tender={selectedTender}
+                onClose={() => setSelectedTender(null)}
+                onUpdate={() => {}}
                 readOnly={true}
               />
             </div>
           </motion.div>
         )}
-
       </AnimatePresence>
 
       {/* Top Marketing & Announcement Bar */}
@@ -181,9 +164,7 @@ export default function Home() {
       {/* Main Navigation Bar */}
       <nav className="fixed top-9 z-50 w-full border-b border-border/80 bg-card/90 backdrop-blur-xl shadow-xs">
         <div className="flex h-16 w-full items-center justify-between px-[2%] gap-4">
-          
-          {/* Brand Logo */}
-          <a href="/" className="flex items-center gap-3 flex-shrink-0 group">
+          <Link href="/" className="flex items-center gap-3 flex-shrink-0 group">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 shadow-md shadow-blue-500/20 group-hover:scale-105 transition-all">
               <Gavel className="h-5 w-5 text-white" />
             </div>
@@ -193,12 +174,11 @@ export default function Home() {
               </span>
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest -mt-0.5">Government Bidding Portal</span>
             </div>
-          </a>
+          </Link>
 
-          {/* Navigation Items with NON-TRANSPARENT Hover Dropdowns */}
           <div className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => (
-              <div 
+              <div
                 key={item.label}
                 className="relative group"
                 onMouseEnter={() => setActiveDropdown(item.label)}
@@ -214,11 +194,9 @@ export default function Home() {
                 >
                   {item.label}
                   {item.dropdown && (
-                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${activeDropdown === item.label ? 'rotate-180 text-primary' : ''}`} />
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${activeDropdown === item.label ? "rotate-180 text-primary" : ""}`} />
                   )}
                 </a>
-
-                {/* SOLID OPAQUE DROPDOWN MENU */}
                 <AnimatePresence>
                   {item.dropdown && activeDropdown === item.label && (
                     <motion.div
@@ -266,11 +244,9 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Action Header Controls */}
           <div className="flex items-center gap-3">
-            {/* Notification Popover Toggle */}
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative rounded-xl p-2.5 hover:bg-secondary border border-border text-muted-foreground hover:text-foreground transition-all cursor-pointer"
                 title="Notifications"
@@ -278,7 +254,6 @@ export default function Home() {
                 <Bell className="h-4 w-4" />
                 <span className="pointer-events-none absolute top-2 right-2 flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               </button>
-
               <AnimatePresence>
                 {showNotifications && (
                   <motion.div
@@ -289,26 +264,22 @@ export default function Home() {
                   >
                     <div className="flex items-center justify-between pb-3 border-b border-border">
                       <h4 className="text-xs font-bold uppercase tracking-wider">Live Alerts</h4>
-                      <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full">3 New</span>
+                      <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full">New</span>
                     </div>
                     <div className="space-y-2 py-2">
-                      <div className="p-2.5 rounded-xl bg-secondary/50 text-xs space-y-1">
-                        <p className="font-semibold text-foreground">New Corrigendum Issued</p>
-                        <p className="text-[11px] text-muted-foreground">GTME-2026-000100 updated tender document.</p>
-                      </div>
-                      <div className="p-2.5 rounded-xl bg-secondary/50 text-xs space-y-1">
-                        <p className="font-semibold text-foreground">Technical Bid Opening</p>
-                        <p className="text-[11px] text-muted-foreground">BCD Jharkhand bid evaluation starts today.</p>
-                      </div>
+                      {tenders.slice(0, 3).map((t) => (
+                        <div key={t._id} className="p-2.5 rounded-xl bg-secondary/50 text-xs space-y-1 cursor-pointer hover:bg-secondary/80 transition-colors" onClick={() => { setSelectedTender(t); setShowNotifications(false); }}>
+                          <p className="font-semibold text-foreground">{t.internalId}</p>
+                          <p className="text-[11px] text-muted-foreground line-clamp-1">{t.title}</p>
+                        </div>
+                      ))}
+                      {tenders.length === 0 && <p className="text-xs text-muted-foreground py-2">No live tenders yet.</p>}
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
-
             <ThemeToggle />
-
-            {/* Admin Dashboard Launch Button */}
             <Link
               href="/admin"
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold text-xs shadow-md hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-all cursor-pointer"
@@ -322,44 +293,10 @@ export default function Home() {
 
       {/* Main Full-Screen Layout Container */}
       <div className="flex w-full flex-1 pt-28 px-[2%] gap-6">
-        
+
         {/* Left Enterprise Sidebar */}
         <aside className="fixed left-[2%] top-28 hidden h-[calc(100vh-8rem)] w-64 flex-col border border-border rounded-2xl bg-card p-5 xl:flex shadow-xs overflow-y-auto">
           <div className="space-y-6">
-            
-            {/* Sector Quick Filters */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
-                <span className="flex items-center gap-2">
-                  <Filter className="h-3.5 w-3.5 text-primary" />
-                  Category Filter
-                </span>
-              </div>
-              <div className="space-y-1">
-                {filterOptions.map((item) => (
-                  <button 
-                    key={item.name} 
-                    onClick={() => setActiveFilter(item.name)}
-                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-between ${
-                      activeFilter === item.name 
-                        ? "bg-primary text-white shadow-md shadow-primary/20" 
-                        : "hover:bg-secondary text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <span>{item.name}</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold ${
-                      activeFilter === item.name ? "bg-white/20 text-white" : "bg-secondary text-muted-foreground"
-                    }`}>
-                      {item.count}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="h-[1px] w-full bg-border" />
-
-            {/* Tender Tools Section */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
                 <LayoutGrid className="h-3.5 w-3.5 text-primary" />
@@ -367,27 +304,23 @@ export default function Home() {
               </div>
               <div className="space-y-1">
                 {[
-                  { icon: Star, label: "Starred Bids", count: "8" },
-                  { icon: History, label: "My Tracked Bids", count: "14" },
-                  { icon: Archive, label: "Archived Contracts", count: "120" },
-                  { icon: PieChart, label: "Analytics & Export", count: "Pro" },
+                  { icon: Star, label: "Starred Bids" },
+                  { icon: History, label: "My Tracked Bids" },
+                  { icon: Archive, label: "Archived Contracts" },
+                  { icon: PieChart, label: "Analytics & Export" },
                 ].map((item) => (
-                  <button 
+                  <button
                     key={item.label}
-                    className="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all cursor-pointer flex items-center justify-between"
+                    className="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all cursor-pointer flex items-center gap-2.5"
                   >
-                    <div className="flex items-center gap-2.5">
-                      <item.icon className="h-3.5 w-3.5 text-primary/80" />
-                      <span>{item.label}</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-muted-foreground">{item.count}</span>
+                    <item.icon className="h-3.5 w-3.5 text-primary/80" />
+                    <span>{item.label}</span>
                   </button>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Enterprise Hub Callout */}
           <div className="mt-auto pt-6">
             <div className="rounded-xl bg-gradient-to-br from-blue-600/10 via-indigo-600/10 to-emerald-600/10 p-4 border border-blue-500/20 text-card-foreground">
               <div className="flex items-center gap-2 mb-1.5">
@@ -402,17 +335,16 @@ export default function Home() {
           </div>
         </aside>
 
-        {/* Main Content Area (Full Screen Responsive width) */}
+        {/* Main Content Area */}
         <main className="flex-1 xl:ml-70 pb-16">
           <div className="w-full space-y-6">
-            
-            {/* Metrics & Analytics Overview Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+            {/* Metrics Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { label: "Active Tenders", value: "1,280", icon: Building2, change: "+12% this week", color: "text-blue-500" },
-                { label: "Pipeline Value", value: "₹3,450 Cr", icon: DollarSign, change: "Updated Live", color: "text-emerald-500" },
-                { label: "Expiring Today", value: "12 Bids", icon: Clock, change: "Action Required", color: "text-amber-500" },
-                { label: "Finalized Awards", value: "84 Bids", icon: Award, change: "+5 today", color: "text-indigo-500" },
+                { label: "Active Tenders", value: tenders.length.toLocaleString(), icon: Building2, color: "text-blue-500" },
+                { label: "Pipeline Value", value: `₹${(totalValue / 10000000).toFixed(0)} Cr`, icon: DollarSign, color: "text-emerald-500" },
+                { label: "Organizations", value: `${new Set(tenders.map((t) => t.organization)).size}`, icon: Award, color: "text-indigo-500" },
               ].map((stat, i) => (
                 <motion.div
                   key={stat.label}
@@ -424,9 +356,6 @@ export default function Home() {
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{stat.label}</p>
                     <p className="text-2xl font-black tracking-tight text-foreground mt-1">{stat.value}</p>
-                    <p className="text-[10px] font-semibold text-emerald-500 mt-1 flex items-center gap-1">
-                      <span>{stat.change}</span>
-                    </p>
                   </div>
                   <div className={`h-11 w-11 rounded-xl bg-secondary flex items-center justify-center ${stat.color}`}>
                     <stat.icon className="h-5 w-5" />
@@ -435,7 +364,7 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Filter, Search & Header Bar */}
+            {/* Search & Sort Bar */}
             <div className="glass-card rounded-2xl p-4 border border-border flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3 w-full md:w-auto">
                 <div className="h-8 w-1 bg-primary rounded-full" />
@@ -443,8 +372,7 @@ export default function Home() {
                   Live Opportunities ({filteredTenders.length})
                 </h2>
               </div>
-              
-              {/* Search Bar Input */}
+
               <div className="flex-1 w-full max-w-xl">
                 <div className="relative flex items-center">
                   <Search className="absolute left-3.5 h-4 w-4 text-muted-foreground" />
@@ -452,25 +380,21 @@ export default function Home() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search tenders by ID, department, location or keyword..."
+                    placeholder="Search by ID, title, organization..."
                     className="h-11 w-full rounded-xl bg-secondary pl-10 pr-10 text-xs font-semibold border border-border outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                   {searchQuery && (
-                    <button 
-                      onClick={() => setSearchQuery("")}
-                      className="absolute right-3 p-1 rounded-full hover:bg-card text-muted-foreground"
-                    >
+                    <button onClick={() => setSearchQuery("")} className="absolute right-3 p-1 rounded-full hover:bg-card text-muted-foreground">
                       <X className="h-3.5 w-3.5" />
                     </button>
                   )}
                 </div>
               </div>
 
-              {/* Sort Dropdown */}
               <div className="flex items-center gap-2 w-full md:w-auto justify-end">
                 <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">Sort By:</span>
-                <select 
-                  value={sortBy} 
+                <select
+                  value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="bg-secondary text-xs font-semibold px-3 py-2 rounded-xl border border-border outline-none cursor-pointer hover:border-primary transition-all text-foreground"
                 >
@@ -481,79 +405,78 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Opportunities Feed Grid (Full Screen Coverage) */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {filteredTenders.map((tender) => (
-                <motion.div
-                  key={tender._id}
-                  whileHover={{ y: -3 }}
-                  onClick={() => setSelectedTender(tender)}
-                  className="glass-card group cursor-pointer rounded-2xl p-5 border border-border hover:border-primary/50 transition-all shadow-xs hover:shadow-xl flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    {/* Header Row: Tender ID & Status Badge */}
-                    <div className="flex items-center justify-between text-xs font-bold">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-mono font-bold tracking-wide border border-primary/20">
+            {/* Tender List - Full Width Single Rows */}
+            <section className="space-y-3">
+              {loading ? (
+                [1, 2, 3].map((i) => (
+                  <div key={i} className="h-20 rounded-2xl bg-muted/50 animate-pulse" />
+                ))
+              ) : filteredTenders.length === 0 ? (
+                <div className="glass-card rounded-2xl p-12 border border-border text-center">
+                  <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-lg font-bold text-foreground">No tenders found</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {searchQuery ? "Try a different search term." : "Tenders will appear here once added from the admin portal."}
+                  </p>
+                </div>
+              ) : (
+                filteredTenders.map((tender) => (
+                  <motion.div
+                    key={tender._id}
+                    whileHover={{ y: -1 }}
+                    onClick={() => setSelectedTender(tender)}
+                    className="glass-card group cursor-pointer rounded-2xl border border-border hover:border-primary/50 transition-all shadow-xs hover:shadow-md"
+                  >
+                    <div className="flex items-center gap-5 p-5">
+                      <div className="flex-shrink-0">
+                        <span className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary font-mono text-xs font-bold tracking-wide border border-primary/20">
                           {tender.internalId}
                         </span>
-                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold tracking-wider border ${
-                          tender.tenderType === 'expiring' 
-                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' 
-                            : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                        }`}>
-                          {tender.statusText}
-                        </span>
                       </div>
 
-                      <div className="flex items-center gap-3 text-[11px]">
-                        <span className="text-muted-foreground">Due:</span>
-                        <span className="font-semibold text-foreground bg-secondary px-2 py-0.5 rounded-md">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                          {tender.title}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {tender.organization}
+                        </p>
+                      </div>
+
+                      <div className="flex-shrink-0 text-right hidden sm:block">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Value</p>
+                        <p className="text-sm font-black text-foreground">
+                          ₹{(tender.tenderValue / 10000000).toFixed(2)} Cr
+                        </p>
+                      </div>
+
+                      <div className="flex-shrink-0 text-right hidden md:block">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">EMD</p>
+                        <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                          ₹{(tender.emdAmount / 100000).toFixed(2)} Lakh
+                        </p>
+                      </div>
+
+                      <div className="flex-shrink-0 text-right">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Due</p>
+                        <p className="text-xs font-bold text-foreground bg-secondary px-2.5 py-0.5 rounded-md inline-block">
                           {tender.dueDate}
-                        </span>
+                        </p>
                       </div>
-                    </div>
 
-                    {/* Title */}
-                    <div>
-                      <h3 className="text-base font-bold text-foreground group-hover:text-primary transition-colors leading-snug line-clamp-2">
-                        {tender.title}
-                      </h3>
-                    </div>
+                      <div className="flex-shrink-0">
+                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-extrabold tracking-wider border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                          LIVE
+                        </span>
+                      </div>
 
-                    {/* Value & EMD Highlights */}
-                    <div className="grid grid-cols-2 gap-4 py-2 px-3 rounded-xl bg-secondary/50 border border-border/50">
-                      <div>
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground block">Tender Value</span>
-                        <span className="text-sm font-black text-foreground">
-                          ₹ {(tender.tenderValue / 10000000).toFixed(2)} Cr
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground block">EMD Amount</span>
-                        <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
-                          ₹ {(tender.emdAmount / 100000).toFixed(2)} Lakh
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Department & Footer Details */}
-                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Building className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                        <span className="font-semibold text-foreground truncate">{tender.organization}</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-secondary font-bold text-muted-foreground flex-shrink-0">
-                          {tender.category}
-                        </span>
-                      </div>
-                      
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-foreground group-hover:bg-primary group-hover:text-white transition-all flex-shrink-0">
+                      <div className="flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-foreground group-hover:bg-primary group-hover:text-white transition-all">
                         <ArrowUpRight className="h-4 w-4" />
                       </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))
+              )}
             </section>
 
           </div>

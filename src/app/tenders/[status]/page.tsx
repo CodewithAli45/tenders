@@ -1,4 +1,7 @@
 import { ArrowLeft, Gavel } from "lucide-react";
+import Link from "next/link";
+
+const budgetValues = [3.5, 7.2, 1.8];
 
 export default async function TenderPage({ params }: { params: Promise<{ status: string }> }) {
   const { status } = await params;
@@ -7,10 +10,10 @@ export default async function TenderPage({ params }: { params: Promise<{ status:
   return (
     <div className="min-h-screen bg-background p-[2%] pt-32">
       <div className="max-w-4xl mx-auto space-y-8">
-        <a href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
           <ArrowLeft className="h-4 w-4" />
           Back to Home
-        </a>
+        </Link>
         <div className="flex items-center justify-between">
           <h1 className="text-4xl font-bold tracking-tight">{statusName} Tenders</h1>
           <div className="flex items-center gap-2 bg-accent/10 text-accent px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">
@@ -32,7 +35,7 @@ export default async function TenderPage({ params }: { params: Promise<{ status:
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-bold">₹ {(Math.random() * 10).toFixed(1)} Cr</p>
+                <p className="font-bold">₹ {budgetValues[i - 1]} Cr</p>
                 <p className="text-[10px] text-muted-foreground uppercase font-bold">Estimated Budget</p>
               </div>
             </div>

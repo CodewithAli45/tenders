@@ -1,13 +1,14 @@
 import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background p-[2%] pt-32">
       <div className="max-w-4xl mx-auto space-y-8">
-        <a href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
           <ArrowLeft className="h-4 w-4" />
           Back to Home
-        </a>
+        </Link>
         <h1 className="text-4xl font-bold tracking-tight">About Us</h1>
         <div className="glass-card p-8 rounded-3xl border border-black/5 dark:border-white/10 space-y-6">
           <p className="text-lg text-muted-foreground leading-relaxed">
