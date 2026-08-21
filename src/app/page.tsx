@@ -49,8 +49,19 @@ interface Tender {
   tenderNo: string;
   portalId: string;
   emdAmount: number;
+  publishDate?: string | null;
   dueDate: string;
+  createdAt?: string | null;
 }
+
+const formatDate = (value?: string | null) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+const formatValue = (amount?: number | null) => (!amount || amount <= 0 ? "Refer Doc" : `₹${(amount / 10000000).toFixed(2)} Cr`);
+const formatEmd = (amount?: number | null) => (!amount || amount <= 0 ? "Refer Doc" : `₹${(amount / 100000).toFixed(2)} Lakh`);
 
 export default function Home() {
   const [selectedTender, setSelectedTender] = useState<Tender | null>(null);
@@ -116,6 +127,14 @@ export default function Home() {
       t.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.tenderNo?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
+  });
+
+  const sortedTenders = [...filteredTenders].sort((a, b) => {
+    if (sortBy === "ValueHigh") return (b.tenderValue || 0) - (a.tenderValue || 0);
+    if (sortBy === "DueDate") return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    const aTime = new Date(a.publishDate || a.createdAt || 0).getTime();
+    const bTime = new Date(b.publishDate || b.createdAt || 0).getTime();
+    return bTime - aTime;
   });
 
   const totalValue = tenders.reduce((sum, t) => sum + (t.tenderValue || 0), 0);
@@ -292,10 +311,10 @@ export default function Home() {
       </nav>
 
       {/* Main Full-Screen Layout Container */}
-      <div className="flex w-full flex-1 pt-28 px-[2%] gap-6">
+      <div className="flex w-full flex-1 pt-28 px-[1%] gap-6">
 
         {/* Left Enterprise Sidebar */}
-        <aside className="fixed left-[2%] top-28 hidden h-[calc(100vh-8rem)] w-64 flex-col border border-border rounded-2xl bg-card p-5 xl:flex shadow-xs overflow-y-auto">
+        <aside className="fixed left-[1%] top-28 hidden h-[calc(100vh-8rem)] w-64 flex-col border border-border rounded-2xl bg-card p-5 xl:flex shadow-xs overflow-y-auto">
           <div className="space-y-6">
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
@@ -319,61 +338,40 @@ export default function Home() {
                 ))}
               </div>
             </div>
-          </div>
 
-          <div className="mt-auto pt-6">
-            <div className="rounded-xl bg-gradient-to-br from-blue-600/10 via-indigo-600/10 to-emerald-600/10 p-4 border border-blue-500/20 text-card-foreground">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="h-2 w-2 rounded-full bg-blue-500 animate-ping" />
-                <p className="text-xs font-extrabold text-primary uppercase tracking-wider">GovTender API</p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                <span>Live Stats</span>
               </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">Automated ERP integration & custom tender webhooks available.</p>
-              <button className="mt-3 w-full py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-blue-600 transition-all shadow-sm">
-                Request API Key
-              </button>
+              <div className="space-y-1">
+                {[
+                  { icon: Building2, label: "Active Tenders", value: tenders.length.toLocaleString() },
+                  { icon: DollarSign, label: "Pipeline Value", value: `₹${(totalValue / 10000000).toFixed(0)} Cr` },
+                  { icon: Award, label: "Organizations", value: `${new Set(tenders.map((t) => t.organization)).size}` },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all flex items-center gap-2.5"
+                  >
+                    <stat.icon className="h-3.5 w-3.5 text-primary/80" />
+                    <span>{stat.label}</span>
+                    <span className="ml-auto font-bold text-foreground">{loading ? "—" : stat.value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+
         </aside>
 
         {/* Main Content Area */}
         <main className="flex-1 xl:ml-70 pb-16">
-          <div className="w-full space-y-6">
-
-            {/* Metrics Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { label: "Active Tenders", value: tenders.length.toLocaleString(), icon: Building2, color: "text-blue-500" },
-                { label: "Pipeline Value", value: `₹${(totalValue / 10000000).toFixed(0)} Cr`, icon: DollarSign, color: "text-emerald-500" },
-                { label: "Organizations", value: `${new Set(tenders.map((t) => t.organization)).size}`, icon: Award, color: "text-indigo-500" },
-              ].map((stat, i) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="glass-card rounded-2xl p-4 border border-border flex items-center justify-between"
-                >
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{stat.label}</p>
-                    <p className="text-2xl font-black tracking-tight text-foreground mt-1">{stat.value}</p>
-                  </div>
-                  <div className={`h-11 w-11 rounded-xl bg-secondary flex items-center justify-center ${stat.color}`}>
-                    <stat.icon className="h-5 w-5" />
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+          <div className="w-full space-y-4">
 
             {/* Search & Sort Bar */}
-            <div className="glass-card rounded-2xl p-4 border border-border flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3 w-full md:w-auto">
-                <div className="h-8 w-1 bg-primary rounded-full" />
-                <h2 className="text-lg font-bold tracking-tight text-foreground whitespace-nowrap">
-                  Live Opportunities ({filteredTenders.length})
-                </h2>
-              </div>
-
-              <div className="flex-1 w-full max-w-xl">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+              <div className="w-full md:w-[28rem]">
                 <div className="relative flex items-center">
                   <Search className="absolute left-3.5 h-4 w-4 text-muted-foreground" />
                   <input
@@ -381,7 +379,7 @@ export default function Home() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by ID, title, organization..."
-                    className="h-11 w-full rounded-xl bg-secondary pl-10 pr-10 text-xs font-semibold border border-border outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="h-11 w-full rounded-xl bg-secondary pl-10 pr-10 text-sm font-semibold border border-border outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                   {searchQuery && (
                     <button onClick={() => setSearchQuery("")} className="absolute right-3 p-1 rounded-full hover:bg-card text-muted-foreground">
@@ -391,12 +389,12 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+              <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">Sort By:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-secondary text-xs font-semibold px-3 py-2 rounded-xl border border-border outline-none cursor-pointer hover:border-primary transition-all text-foreground"
+                  className="appearance-none bg-secondary text-xs font-semibold px-4 py-2.5 rounded-xl border border-border outline-none cursor-pointer hover:border-primary transition-all text-foreground text-center [text-align-last:center]"
                 >
                   <option value="Recent">Recent First</option>
                   <option value="ValueHigh">Value: High to Low</option>
@@ -406,77 +404,66 @@ export default function Home() {
             </div>
 
             {/* Tender List - Full Width Single Rows */}
-            <section className="space-y-3">
-              {loading ? (
-                [1, 2, 3].map((i) => (
-                  <div key={i} className="h-20 rounded-2xl bg-muted/50 animate-pulse" />
-                ))
-              ) : filteredTenders.length === 0 ? (
-                <div className="glass-card rounded-2xl p-12 border border-border text-center">
-                  <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-lg font-bold text-foreground">No tenders found</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {searchQuery ? "Try a different search term." : "Tenders will appear here once added from the admin portal."}
-                  </p>
-                </div>
-              ) : (
-                filteredTenders.map((tender) => (
-                  <motion.div
-                    key={tender._id}
-                    whileHover={{ y: -1 }}
-                    onClick={() => setSelectedTender(tender)}
-                    className="glass-card group cursor-pointer rounded-2xl border border-border hover:border-primary/50 transition-all shadow-xs hover:shadow-md"
-                  >
-                    <div className="flex items-center gap-5 p-5">
-                      <div className="flex-shrink-0">
-                        <span className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary font-mono text-xs font-bold tracking-wide border border-primary/20">
+            <section className="glass-card rounded-2xl border border-border overflow-hidden">
+              <div className="divide-y divide-border">
+                {loading ? (
+                  [1, 2, 3].map((i) => (
+                    <div key={i} className="h-24 bg-muted/50 animate-pulse" />
+                  ))
+                ) : filteredTenders.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-lg font-bold text-foreground">No tenders found</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {searchQuery ? "Try a different search term." : "Tenders will appear here once added from the admin portal."}
+                    </p>
+                  </div>
+                ) : (
+                  sortedTenders.map((tender) => (
+                    <motion.div
+                      key={tender._id}
+                      onClick={() => setSelectedTender(tender)}
+                      className="group cursor-pointer px-4 py-3 hover:bg-muted/40 transition-colors"
+                    >
+                      {/* Row 1: ID left · Due date + Live right */}
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-mono text-xs font-bold tracking-wide border border-primary/20">
                           {tender.internalId}
                         </span>
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-[11px] font-semibold text-muted-foreground whitespace-nowrap">
+                            Due: <span className="font-bold text-foreground">{formatDate(tender.dueDate)}</span>
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                            LIVE
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                          {tender.title}
-                        </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {tender.organization}
-                        </p>
-                      </div>
+                      {/* Row 2: Full title (wraps, nothing hidden) */}
+                      <h3 className="mt-2 text-sm font-bold text-foreground group-hover:text-primary transition-colors leading-snug">
+                        {tender.title}
+                      </h3>
 
-                      <div className="flex-shrink-0 text-right hidden sm:block">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Value</p>
-                        <p className="text-sm font-black text-foreground">
-                          ₹{(tender.tenderValue / 10000000).toFixed(2)} Cr
-                        </p>
-                      </div>
-
-                      <div className="flex-shrink-0 text-right hidden md:block">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">EMD</p>
-                        <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">
-                          ₹{(tender.emdAmount / 100000).toFixed(2)} Lakh
-                        </p>
-                      </div>
-
-                      <div className="flex-shrink-0 text-right">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Due</p>
-                        <p className="text-xs font-bold text-foreground bg-secondary px-2.5 py-0.5 rounded-md inline-block">
-                          {tender.dueDate}
-                        </p>
-                      </div>
-
-                      <div className="flex-shrink-0">
-                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-extrabold tracking-wider border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
-                          LIVE
+                      {/* Row 3: Org · Value pill · EMD pill · Published — fixed columns align vertically across all rows */}
+                      <div className="mt-2 grid items-center gap-x-5 gap-y-1.5 text-[11px] font-semibold text-muted-foreground grid-cols-[minmax(0,1fr)] sm:grid-cols-[minmax(0,18rem)_9rem_9.5rem_minmax(0,1fr)]">
+                        <span className="break-words">{tender.organization}</span>
+                        <span className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/10 px-2 py-0.5">
+                          <span className="uppercase tracking-wider text-[10px]">Value</span>
+                          <span className="font-bold text-foreground">{formatValue(tender.tenderValue)}</span>
+                        </span>
+                        <span className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5">
+                          <span className="uppercase tracking-wider text-[10px]">EMD</span>
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatEmd(tender.emdAmount)}</span>
+                        </span>
+                        <span>
+                          Published: <span className="font-bold text-foreground">{formatDate(tender.publishDate)}</span>
                         </span>
                       </div>
-
-                      <div className="flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-lg bg-secondary text-foreground group-hover:bg-primary group-hover:text-white transition-all">
-                        <ArrowUpRight className="h-4 w-4" />
-                      </div>
-                    </div>
-                  </motion.div>
-                ))
-              )}
+                    </motion.div>
+                  ))
+                )}
+              </div>
             </section>
 
           </div>

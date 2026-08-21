@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Building2, FileText, FolderOpen, LayoutDashboard, LogOut, Plus, X } from "lucide-react";
+import { Building2, FileText, FolderOpen, Home, LayoutDashboard, LogOut, Plus, X } from "lucide-react";
 import axios from "axios";
 import { NewTenderForm } from "./new-tender-form";
 import { NewOrganizationForm } from "./new-organization-form";
@@ -38,7 +38,7 @@ export function AdminDashboard({ onClose, isModal = false }: AdminDashboardProps
   const label = section === "tenders" ? "Tenders" : section === "organizations" ? "Organization" : "Attachment";
   const plural = section === "organizations" ? "organizations" : section;
 
-  async function logout() { setIsLoggingOut(true); await fetch("/api/admin/logout", { method: "POST" }); window.location.assign("/admin/login"); }
+  async function logout() { setIsLoggingOut(true); await fetch("/api/admin/logout", { method: "POST" }); window.location.assign("/"); }
   function closeEditor() { setMode("list"); setViewingTender(null); setViewingOrganization(null); }
 
   return <div className={`flex h-full w-full overflow-hidden bg-background text-foreground ${isModal ? "rounded-2xl" : ""}`}>
@@ -47,7 +47,7 @@ export function AdminDashboard({ onClose, isModal = false }: AdminDashboardProps
       <nav className="flex-1 space-y-1 p-3">
         {([{ id: "tenders", label: "Tenders", icon: FileText }, { id: "organizations", label: "Organization", icon: Building2 }, { id: "attachments", label: "Attachment", icon: FolderOpen }] as const).map((item) => <button key={item.id} onClick={() => { setSection(item.id); closeEditor(); }} className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm font-semibold transition ${section === item.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}><item.icon className="h-4 w-4" />{item.label}</button>)}
       </nav>
-      <div className="border-t border-border p-3"><button onClick={logout} disabled={isLoggingOut} className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-60"><LogOut className="h-4 w-4" />{isLoggingOut ? "Signing out…" : "Logout"}</button></div>
+      <div className="border-t border-border p-3 space-y-1"><a href="/" className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"><Home className="h-4 w-4" />Back to Home</a><button onClick={logout} disabled={isLoggingOut} className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-60"><LogOut className="h-4 w-4" />{isLoggingOut ? "Signing out…" : "Logout"}</button></div>
     </aside>
 
     <main className="min-w-0 flex-1 overflow-hidden">
