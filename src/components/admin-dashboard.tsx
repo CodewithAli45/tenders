@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Building2, FileText, FolderOpen, Home, LayoutDashboard, LogOut, Plus, X } from "lucide-react";
+import { Building2, FileText, FolderOpen, Home, LayoutDashboard, LogOut, Plus, Search, X } from "lucide-react";
 import axios from "axios";
 import { NewTenderForm } from "./new-tender-form";
 import { NewOrganizationForm } from "./new-organization-form";
@@ -22,6 +22,7 @@ export function AdminDashboard({ onClose, isModal = false }: AdminDashboardProps
   const [viewingOrganization, setViewingOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [tenderSearch, setTenderSearch] = useState("");
 
   const loadData = async () => {
     setLoading(true);
@@ -36,7 +37,6 @@ export function AdminDashboard({ onClose, isModal = false }: AdminDashboardProps
 
   const attachments = useMemo(() => tenders.flatMap((tender) => (tender.tenderDocuments || []).map((url, index) => ({ id: `${tender._id}-${index}`, url, tender }))), [tenders]);
   const label = section === "tenders" ? "Tenders" : section === "organizations" ? "Organization" : "Attachment";
-  const plural = section === "organizations" ? "organizations" : section;
 
   async function logout() { setIsLoggingOut(true); await fetch("/api/admin/logout", { method: "POST" }); window.location.assign("/"); }
   function closeEditor() { setMode("list"); setViewingTender(null); setViewingOrganization(null); }
@@ -58,11 +58,33 @@ export function AdminDashboard({ onClose, isModal = false }: AdminDashboardProps
         viewingTender ? <motion.div key="tender-detail" className="h-full" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}><TenderDetailView tender={viewingTender} onClose={closeEditor} onUpdate={loadData} /></motion.div> :
         <motion.div key="list" className="flex h-full flex-col" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <header className="flex min-h-20 items-center justify-between border-b border-border px-5 md:px-8"><div><p className="text-xs font-bold uppercase tracking-widest text-primary">Database table</p><h1 className="mt-1 text-xl font-bold">{label}</h1></div><div className="flex items-center gap-2">{section !== "attachments" && <button onClick={() => setMode(section === "tenders" ? "newTender" : "newOrganization")} className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110"><Plus className="h-4 w-4" />Add {section === "tenders" ? "tender" : "organization"}</button>}{isModal && <button onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full hover:bg-muted"><X className="h-5 w-5" /></button>}</div></header>
-          <section className="flex-1 overflow-auto p-5 md:p-8"><div className="overflow-hidden rounded-2xl border border-border bg-card">
-            {section === "tenders" && <TenderTable tenders={tenders} loading={loading} onSelect={setViewingTender} />}
-            {section === "organizations" && <OrganizationTable organizations={organizations} loading={loading} onSelect={setViewingOrganization} />}
-            {section === "attachments" && <AttachmentTable attachments={attachments} loading={loading} />}
-          </div><p className="mt-3 text-xs text-muted-foreground">Showing newest {plural} first.</p></section>
+          <section className="flex-1 overflow-auto p-5 md:p-8">
+            {section === "tenders" && (
+              <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative w-full sm:max-w-xs">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={tenderSearch}
+                    onChange={(e) => setTenderSearch(e.target.value)}
+                    placeholder="Search ID, title, organization..."
+                    className="h-10 w-full rounded-xl border border-border bg-card pl-9 pr-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <p className="text-xs font-semibold text-muted-foreground">Showing {tenders.length} tender{tenders.length === 1 ? "" : "s"} · newest first</p>
+              </div>
+            )}
+            <div className="overflow-hidden rounded-2xl border border-border bg-card">
+              {section === "tenders" && <TenderTable tenders={tenders} search={tenderSearch} loading={loading} onSelect={setViewingTender} />}
+              {section === "organizations" && <OrganizationTable organizations={organizations} loading={loading} onSelect={setViewingOrganization} />}
+              {section === "attachments" && <AttachmentTable attachments={attachments} loading={loading} />}
+            </div>
+            {section === "tenders" && tenders.length > 0 && !loading && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Tip: search or scroll to find older tenders, then click any row to edit it — updates sync to the dashboard.
+              </p>
+            )}
+          </section>
         </motion.div>}
       </AnimatePresence>
     </main>
@@ -71,6 +93,10 @@ export function AdminDashboard({ onClose, isModal = false }: AdminDashboardProps
 
 function LoadingRows({ columns }: { columns: number }) { return <tbody>{[1, 2, 3].map((row) => <tr key={row} className="animate-pulse"><td colSpan={columns} className="h-16 bg-muted/50" /></tr>)}</tbody>; }
 function EmptyRow({ columns, children }: { columns: number; children: string }) { return <tbody><tr><td colSpan={columns} className="px-6 py-16 text-center text-sm text-muted-foreground">{children}</td></tr></tbody>; }
-function TenderTable({ tenders, loading, onSelect }: { tenders: Tender[]; loading: boolean; onSelect: (tender: Tender) => void }) { return <table className="w-full text-left"><thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground"><tr><th className="px-5 py-4">Tender ID</th><th className="px-5 py-4">Tender</th><th className="px-5 py-4">Organization</th><th className="px-5 py-4">Due date</th></tr></thead>{loading ? <LoadingRows columns={4} /> : tenders.length ? <tbody className="divide-y divide-border">{tenders.map((tender) => <tr key={tender._id} onClick={() => onSelect(tender)} className="cursor-pointer transition hover:bg-muted/50"><td className="px-5 py-4 font-mono text-xs font-bold text-primary">{tender.internalId}</td><td className="max-w-sm px-5 py-4 text-sm font-semibold">{tender.title}</td><td className="px-5 py-4 text-sm text-muted-foreground">{tender.organization}</td><td className="whitespace-nowrap px-5 py-4 text-sm text-muted-foreground">{new Date(tender.dueDate).toLocaleDateString()}</td></tr>)}</tbody> : <EmptyRow columns={4}>No tenders yet. Add your first tender.</EmptyRow>}</table>; }
+function TenderTable({ tenders, search = "", loading, onSelect }: { tenders: Tender[]; search?: string; loading: boolean; onSelect: (tender: Tender) => void }) {
+  const query = search.trim().toLowerCase();
+  const filtered = query ? tenders.filter((t) => t.internalId.toLowerCase().includes(query) || t.title.toLowerCase().includes(query) || t.organization.toLowerCase().includes(query)) : tenders;
+  return <table className="w-full text-left"><thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground"><tr><th className="px-5 py-4">Tender ID</th><th className="px-5 py-4">Tender</th><th className="px-5 py-4">Organization</th><th className="px-5 py-4">Due date</th></tr></thead>{loading ? <LoadingRows columns={4} /> : filtered.length ? <tbody className="divide-y divide-border">{filtered.map((tender) => <tr key={tender._id} onClick={() => onSelect(tender)} className="cursor-pointer transition hover:bg-muted/50"><td className="px-5 py-4 font-mono text-xs font-bold text-primary">{tender.internalId}</td><td className="max-w-sm px-5 py-4 text-sm font-semibold">{tender.title}</td><td className="px-5 py-4 text-sm text-muted-foreground">{tender.organization}</td><td className="whitespace-nowrap px-5 py-4 text-sm text-muted-foreground">{new Date(tender.dueDate).toLocaleDateString()}</td></tr>)}</tbody> : <EmptyRow columns={4}>{query ? `No tenders match "${search.trim()}".` : "No tenders yet. Add your first tender."}</EmptyRow>}</table>;
+}
 function OrganizationTable({ organizations, loading, onSelect }: { organizations: Organization[]; loading: boolean; onSelect: (organization: Organization) => void }) { return <table className="w-full text-left"><thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground"><tr><th className="px-5 py-4">Organization</th><th className="px-5 py-4">Details</th><th className="px-5 py-4">Contact</th><th className="px-5 py-4">Email / phone</th></tr></thead>{loading ? <LoadingRows columns={4} /> : organizations.length ? <tbody className="divide-y divide-border">{organizations.map((organization) => <tr key={organization._id} onClick={() => onSelect(organization)} className="cursor-pointer transition hover:bg-muted/50"><td className="px-5 py-4 text-sm font-bold">{organization.name}</td><td className="max-w-sm px-5 py-4 text-sm text-muted-foreground">{organization.details || "—"}</td><td className="px-5 py-4 text-sm text-muted-foreground">{organization.contactPerson || "—"}</td><td className="px-5 py-4 text-sm text-muted-foreground">{organization.email || organization.phone || "—"}</td></tr>)}</tbody> : <EmptyRow columns={4}>No organizations yet. Add an organization with its details.</EmptyRow>}</table>; }
 function AttachmentTable({ attachments, loading }: { attachments: { id: string; url: string; tender: Tender }[]; loading: boolean }) { return <table className="w-full text-left"><thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground"><tr><th className="px-5 py-4">File</th><th className="px-5 py-4">Tender</th><th className="px-5 py-4">Tender ID</th><th className="px-5 py-4">Open</th></tr></thead>{loading ? <LoadingRows columns={4} /> : attachments.length ? <tbody className="divide-y divide-border">{attachments.map((attachment, index) => <tr key={attachment.id}><td className="px-5 py-4 text-sm font-semibold">Attachment {index + 1}</td><td className="max-w-sm px-5 py-4 text-sm text-muted-foreground">{attachment.tender.title}</td><td className="px-5 py-4 font-mono text-xs text-primary">{attachment.tender.internalId}</td><td className="px-5 py-4"><a className="text-sm font-semibold text-primary hover:underline" href={attachment.url} target="_blank" rel="noreferrer">View file</a></td></tr>)}</tbody> : <EmptyRow columns={4}>No attachments have been uploaded to tenders yet.</EmptyRow>}</table>; }

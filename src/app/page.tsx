@@ -3,7 +3,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
-  Bell,
   Building2,
   Gavel,
   ArrowUpRight,
@@ -33,11 +32,16 @@ import {
   TrendingUp,
   AlertOctagon,
   Sparkles,
+  Filter,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Mail,
+  MapPin,
   X
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { TenderDetailView } from "@/components/tender-detail-view";
 
 interface Tender {
@@ -67,8 +71,10 @@ export default function Home() {
   const [selectedTender, setSelectedTender] = useState<Tender | null>(null);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("Recent");
-  const [showNotifications, setShowNotifications] = useState(false);
+  const [filterBy, setFilterBy] = useState("DueDate");
+  const [orgFilter, setOrgFilter] = useState<string | null>(null);
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [tenders, setTenders] = useState<Tender[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -82,16 +88,6 @@ export default function Home() {
 
   const navItems = [
     { label: "Home", href: "/" },
-    {
-      label: "Tools",
-      href: "/tools",
-      dropdown: [
-        { label: "PDF Manager", href: "/tools/pdf-manager", description: "Merge, split & edit tender documents", icon: FileText },
-        { label: "Calculator", href: "/tools/calculator", description: "EMD & cost estimation toolkit", icon: Calculator },
-        { label: "AutoCAD Viewer", href: "/tools/autocad-viewer", description: "Preview DWG & blueprint files", icon: Layers },
-        { label: "MS Excel", href: "/tools/ms-excel", description: "Export & process tender BOQs", icon: FileSpreadsheet },
-      ]
-    },
     { label: "About Us", href: "/about" },
     {
       label: "Tenders",
@@ -101,6 +97,16 @@ export default function Home() {
         { label: "Status Tracker", href: "/tenders/status", description: "Check evaluation & technical bids", icon: Activity },
         { label: "Awarded Bids", href: "/tenders/award", description: "Recently finalized contract awards", icon: Award },
         { label: "Cancelled", href: "/tenders/cancelled", description: "Archived & revoked tenders", icon: AlertTriangle },
+      ]
+    },
+    {
+      label: "Tools",
+      href: "/tools",
+      dropdown: [
+        { label: "PDF Manager", href: "/pdf-manager", description: "Merge, split & edit tender documents", icon: FileText, target: "_blank" },
+        { label: "Calculator", href: "/tools/calculator", description: "EMD & cost estimation toolkit", icon: Calculator },
+        { label: "AutoCAD Viewer", href: "/tools/autocad-viewer", description: "Preview DWG & blueprint files", icon: Layers },
+        { label: "MS Excel", href: "/tools/ms-excel", description: "Export & process tender BOQs", icon: FileSpreadsheet },
       ]
     },
     {
@@ -120,22 +126,28 @@ export default function Home() {
     },
   ];
 
+  const organizations = Array.from(new Set(tenders.map((t) => t.organization).filter(Boolean))).sort();
+
   const filteredTenders = tenders.filter((t) => {
     const matchesSearch = !searchQuery ||
       t.internalId.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.tenderNo?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+    const matchesOrg = !orgFilter || t.organization === orgFilter;
+    return matchesSearch && matchesOrg;
   });
 
   const sortedTenders = [...filteredTenders].sort((a, b) => {
-    if (sortBy === "ValueHigh") return (b.tenderValue || 0) - (a.tenderValue || 0);
-    if (sortBy === "DueDate") return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-    const aTime = new Date(a.publishDate || a.createdAt || 0).getTime();
-    const bTime = new Date(b.publishDate || b.createdAt || 0).getTime();
-    return bTime - aTime;
+    if (filterBy === "HighValue") return (b.tenderValue || 0) - (a.tenderValue || 0);
+    if (filterBy === "Organization") return a.organization.localeCompare(b.organization);
+    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
   });
+
+  const PER_PAGE = 10;
+  const totalPages = Math.max(1, Math.ceil(sortedTenders.length / PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedTenders = sortedTenders.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
 
   const totalValue = tenders.reduce((sum, t) => sum + (t.tenderValue || 0), 0);
 
@@ -170,12 +182,12 @@ export default function Home() {
             <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
             ENTERPRISE HUB
           </span>
-          <span className="hidden sm:inline text-slate-300">Live & Real-time Government Tender Management System</span>
+          <span className="hidden sm:inline text-slate-300">EPC, Turnkey & PSU Infrastructure Tenders</span>
         </div>
         <div className="flex items-center gap-4">
           <a href="tel:+919661221326" className="flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors">
             <Phone className="h-3.5 w-3.5 text-blue-400" />
-            <span className="hidden md:inline font-semibold">Helpline:</span> +91 9661221326
+            <span className="hidden md:inline font-semibold">Contact:</span> +91 9661221326
           </a>
         </div>
       </div>
@@ -191,7 +203,7 @@ export default function Home() {
               <span className="text-lg font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
                 GovTender <span className="text-xs px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-bold uppercase tracking-wider">Pro</span>
               </span>
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest -mt-0.5">Government Bidding Portal</span>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest -mt-0.5">PSU BIDDING INTELLIGENCE</span>
             </div>
           </Link>
 
@@ -236,6 +248,8 @@ export default function Home() {
                             <a
                               key={subItem.label}
                               href={subItem.href}
+                              target={(subItem as Record<string, unknown>).target as string | undefined}
+                              rel={(subItem as Record<string, unknown>).target ? "noopener noreferrer" : undefined}
                               className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-primary/10 hover:text-primary transition-all group/item cursor-pointer"
                             >
                               <div className="h-8 w-8 rounded-lg bg-secondary group-hover/item:bg-primary/20 flex items-center justify-center text-muted-foreground group-hover/item:text-primary transition-colors flex-shrink-0 mt-0.5">
@@ -264,47 +278,12 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="relative rounded-xl p-2.5 hover:bg-secondary border border-border text-muted-foreground hover:text-foreground transition-all cursor-pointer"
-                title="Notifications"
-              >
-                <Bell className="h-4 w-4" />
-                <span className="pointer-events-none absolute top-2 right-2 flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              </button>
-              <AnimatePresence>
-                {showNotifications && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                    className="absolute right-0 top-full mt-2 w-80 rounded-2xl dropdown-popover p-4 shadow-2xl z-[100] border border-border bg-card"
-                  >
-                    <div className="flex items-center justify-between pb-3 border-b border-border">
-                      <h4 className="text-xs font-bold uppercase tracking-wider">Live Alerts</h4>
-                      <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full">New</span>
-                    </div>
-                    <div className="space-y-2 py-2">
-                      {tenders.slice(0, 3).map((t) => (
-                        <div key={t._id} className="p-2.5 rounded-xl bg-secondary/50 text-xs space-y-1 cursor-pointer hover:bg-secondary/80 transition-colors" onClick={() => { setSelectedTender(t); setShowNotifications(false); }}>
-                          <p className="font-semibold text-foreground">{t.internalId}</p>
-                          <p className="text-[11px] text-muted-foreground line-clamp-1">{t.title}</p>
-                        </div>
-                      ))}
-                      {tenders.length === 0 && <p className="text-xs text-muted-foreground py-2">No live tenders yet.</p>}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            <ThemeToggle />
             <Link
               href="/admin"
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold text-xs shadow-md hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-all cursor-pointer"
             >
               <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Admin Portal</span>
+              <span className="hidden sm:inline">Admin</span>
             </Link>
           </div>
         </div>
@@ -377,7 +356,7 @@ export default function Home() {
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                     placeholder="Search by ID, title, organization..."
                     className="h-11 w-full rounded-xl bg-secondary pl-10 pr-10 text-sm font-semibold border border-border outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
@@ -389,17 +368,67 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">Sort By:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="appearance-none bg-secondary text-xs font-semibold px-4 py-2.5 rounded-xl border border-border outline-none cursor-pointer hover:border-primary transition-all text-foreground text-center [text-align-last:center]"
+              <div className="relative">
+                <button
+                  onClick={() => setFilterMenuOpen(!filterMenuOpen)}
+                  className="flex h-11 items-center gap-2 rounded-xl bg-secondary px-4 text-sm font-semibold border border-border outline-none hover:border-primary transition-all cursor-pointer text-foreground"
                 >
-                  <option value="Recent">Recent First</option>
-                  <option value="ValueHigh">Value: High to Low</option>
-                  <option value="DueDate">Due Date: Earliest</option>
-                </select>
+                  <Filter className="h-4 w-4" />
+                  <span>Filter By</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${filterMenuOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                <AnimatePresence>
+                  {filterMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                      className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-card border border-border shadow-2xl p-2 z-[100]"
+                    >
+                      <button
+                        onClick={() => { setFilterBy("DueDate"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); }}
+                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold transition ${filterBy === "DueDate" ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
+                      >
+                        Due Date <span className="text-[10px] text-muted-foreground font-bold">Default</span>
+                      </button>
+                      <button
+                        onClick={() => { setFilterBy("HighValue"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); }}
+                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold transition ${filterBy === "HighValue" ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
+                      >
+                        High Value
+                      </button>
+
+                      <div className="relative group">
+                        <button
+                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold transition ${filterBy === "Organization" ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
+                        >
+                          Organization
+                          <ChevronDown className="h-4 w-4 -rotate-90" />
+                        </button>
+                        <div className="absolute left-full top-0 ml-1 hidden group-hover:block w-56 rounded-2xl bg-card border border-border shadow-2xl p-2 max-h-72 overflow-y-auto z-[110]">
+                          <button
+                            onClick={() => { setFilterBy("Organization"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); }}
+                            className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition hover:bg-muted"
+                          >
+                            All Organizations
+                            {!orgFilter && filterBy === "Organization" && <Check className="h-4 w-4 text-primary" />}
+                          </button>
+                          {organizations.map((org) => (
+                            <button
+                              key={org}
+                              onClick={() => { setFilterBy("Organization"); setOrgFilter(org); setCurrentPage(1); setFilterMenuOpen(false); }}
+                              className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm transition hover:bg-muted"
+                            >
+                              <span className="truncate">{org}</span>
+                              {orgFilter === org && <Check className="h-4 w-4 text-primary flex-shrink-0" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
@@ -415,11 +444,11 @@ export default function Home() {
                     <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-lg font-bold text-foreground">No tenders found</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {searchQuery ? "Try a different search term." : "Tenders will appear here once added from the admin portal."}
+                      {searchQuery || orgFilter ? "Try adjusting your search or filter." : "Tenders will appear here once added from the admin portal."}
                     </p>
                   </div>
                 ) : (
-                  sortedTenders.map((tender) => (
+                  pagedTenders.map((tender) => (
                     <motion.div
                       key={tender._id}
                       onClick={() => setSelectedTender(tender)}
@@ -466,9 +495,116 @@ export default function Home() {
               </div>
             </section>
 
+            {!loading && sortedTenders.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1">
+                <p className="text-xs text-muted-foreground font-semibold">
+                  Showing <span className="text-foreground font-bold">{sortedTenders.length === 0 ? 0 : (safePage - 1) * PER_PAGE + 1}</span>–
+                  <span className="text-foreground font-bold">{Math.min(safePage * PER_PAGE, sortedTenders.length)}</span> of{" "}
+                  <span className="text-foreground font-bold">{sortedTenders.length}</span> tenders
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, safePage - 1))}
+                    disabled={safePage === 1}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-sm font-bold text-muted-foreground transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold transition cursor-pointer ${
+                        page === safePage
+                          ? "bg-primary text-white shadow-md shadow-primary/25"
+                          : "border border-border bg-card text-muted-foreground hover:border-primary hover:text-primary"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, safePage + 1))}
+                    disabled={safePage === totalPages}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-sm font-bold text-muted-foreground transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    aria-label="Next page"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
           </div>
         </main>
       </div>
+
+      {/* Footer */}
+      <footer className="mt-12 border-t border-border bg-card/40 xl:ml-70">
+        <div className="w-full px-[4%] md:px-[6%] py-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+            <div className="space-y-3">
+              <Link href="/" className="flex items-center gap-2 group">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 shadow-md shadow-blue-500/20">
+                  <Gavel className="h-5 w-5 text-white" />
+                </div>
+                <span className="text-base font-extrabold tracking-tight text-foreground">
+                  GovTender <span className="text-xs px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-bold uppercase tracking-wider">Pro</span>
+                </span>
+              </Link>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Real-time Government Tender Management for EPC, Turnkey &amp; PSU Infrastructure projects. Find, track and win tenders with intelligent bidding intelligence.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-extrabold uppercase tracking-widest text-foreground mb-4">Quick Links</h4>
+              <ul className="space-y-2.5 text-sm font-semibold text-muted-foreground">
+                <li><Link href="/" className="hover:text-primary transition-colors">Home</Link></li>
+                <li><Link href="/tenders/live" className="hover:text-primary transition-colors">Live Tenders</Link></li>
+                <li><Link href="/tools/calculator" className="hover:text-primary transition-colors">EMD Calculator</Link></li>
+                <li><Link href="/pdf-manager" className="hover:text-primary transition-colors">PDF Manager</Link></li>
+                <li><Link href="/about" className="hover:text-primary transition-colors">About Us</Link></li>
+                <li><Link href="/admin" className="hover:text-primary transition-colors">Admin Portal</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-extrabold uppercase tracking-widest text-foreground mb-4">Our Services</h4>
+              <ul className="space-y-2.5 text-sm font-semibold text-muted-foreground">
+                <li><Link href="/services/registration" className="hover:text-primary transition-colors">Vendor Registration</Link></li>
+                <li><Link href="/services/cost-estimation" className="hover:text-primary transition-colors">Cost Estimation</Link></li>
+                <li><Link href="/services/bid-preparation" className="hover:text-primary transition-colors">Bid Preparation</Link></li>
+                <li><Link href="/services/contract-finalization" className="hover:text-primary transition-colors">Contract Finalization</Link></li>
+                <li><Link href="/services/billing-schedule" className="hover:text-primary transition-colors">Billing Schedule</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-extrabold uppercase tracking-widest text-foreground mb-4">Contact</h4>
+              <ul className="space-y-3 text-sm font-semibold text-muted-foreground">
+                <li className="flex items-start gap-2.5">
+                  <Phone className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <a href="tel:+919661221326" className="hover:text-primary transition-colors">+91 96612 21326</a>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Mail className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <a href="mailto:info@govtenderhub.com" className="hover:text-primary transition-colors">info@govtenderhub.com</a>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <MapPin className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <span>India — Serving EPC, Turnkey &amp; PSU clients nationwide</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div className="border-t border-border py-5 px-[4%] md:px-[6%] flex flex-col sm:flex-row items-center justify-between gap-2">
+          <p className="text-xs font-semibold text-muted-foreground">© {new Date().getFullYear()} GovTender Pro. All rights reserved.</p>
+          <p className="text-xs font-semibold text-muted-foreground">Real-time Government Tender Intelligence Platform</p>
+        </div>
+      </footer>
     </div>
   );
 }
