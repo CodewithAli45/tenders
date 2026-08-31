@@ -40,7 +40,7 @@ import {
   MapPin,
   X
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { TenderDetailView } from "@/components/tender-detail-view";
 
@@ -74,6 +74,8 @@ export default function Home() {
   const [filterBy, setFilterBy] = useState("DueDate");
   const [orgFilter, setOrgFilter] = useState<string | null>(null);
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const [orgMenuOpen, setOrgMenuOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [tenders, setTenders] = useState<Tender[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,6 +86,25 @@ export default function Home() {
       .then((data) => setTenders(Array.isArray(data) ? data : []))
       .catch(() => setTenders([]))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!filterMenuOpen) setOrgMenuOpen(false);
+  }, [filterMenuOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+        setFilterMenuOpen(false);
+        setOrgMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
   const navItems = [
@@ -141,7 +162,7 @@ export default function Home() {
   const sortedTenders = [...filteredTenders].sort((a, b) => {
     if (filterBy === "HighValue") return (b.tenderValue || 0) - (a.tenderValue || 0);
     if (filterBy === "Organization") return a.organization.localeCompare(b.organization);
-    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
   });
 
   const PER_PAGE = 10;
@@ -368,7 +389,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="relative">
+              <div className="relative" ref={filterRef}>
                 <button
                   onClick={() => setFilterMenuOpen(!filterMenuOpen)}
                   className="flex h-11 items-center gap-2 rounded-xl bg-secondary px-4 text-sm font-semibold border border-border outline-none hover:border-primary transition-all cursor-pointer text-foreground"
@@ -399,32 +420,43 @@ export default function Home() {
                         High Value
                       </button>
 
-                      <div className="relative group">
+                      <div className="relative">
                         <button
+                          onClick={() => setOrgMenuOpen(!orgMenuOpen)}
                           className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold transition ${filterBy === "Organization" ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
                         >
                           Organization
-                          <ChevronDown className="h-4 w-4 -rotate-90" />
+                          <ChevronDown className={`h-4 w-4 -rotate-90 transition-transform duration-200 ${orgMenuOpen ? "rotate-0" : ""}`} />
                         </button>
-                        <div className="absolute left-full top-0 ml-1 hidden group-hover:block w-56 rounded-2xl bg-card border border-border shadow-2xl p-2 max-h-72 overflow-y-auto z-[110]">
-                          <button
-                            onClick={() => { setFilterBy("Organization"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); }}
-                            className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition hover:bg-muted"
-                          >
-                            All Organizations
-                            {!orgFilter && filterBy === "Organization" && <Check className="h-4 w-4 text-primary" />}
-                          </button>
-                          {organizations.map((org) => (
-                            <button
-                              key={org}
-                              onClick={() => { setFilterBy("Organization"); setOrgFilter(org); setCurrentPage(1); setFilterMenuOpen(false); }}
-                              className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm transition hover:bg-muted"
+                        <AnimatePresence>
+                          {orgMenuOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                              transition={{ duration: 0.15, ease: "easeOut" }}
+                              className="absolute right-0 top-full mt-1 w-full max-h-80 overflow-y-auto rounded-2xl bg-card border border-border shadow-2xl p-2 z-[110] sm:right-full sm:top-0 sm:mt-0 sm:mr-1.5 sm:w-60"
                             >
-                              <span className="truncate">{org}</span>
-                              {orgFilter === org && <Check className="h-4 w-4 text-primary flex-shrink-0" />}
-                            </button>
-                          ))}
-                        </div>
+                              <button
+                                onClick={() => { setFilterBy("Organization"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); }}
+                                className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition hover:bg-muted cursor-pointer"
+                              >
+                                All Organizations
+                                {!orgFilter && filterBy === "Organization" && <Check className="h-4 w-4 text-primary" />}
+                              </button>
+                              {organizations.map((org) => (
+                                <button
+                                  key={org}
+                                  onClick={() => { setFilterBy("Organization"); setOrgFilter(org); setCurrentPage(1); setFilterMenuOpen(false); }}
+                                  className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm transition hover:bg-muted cursor-pointer"
+                                >
+                                  <span className="truncate">{org}</span>
+                                  {orgFilter === org && <Check className="h-4 w-4 text-primary flex-shrink-0" />}
+                                </button>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </motion.div>
                   )}
@@ -460,17 +492,27 @@ export default function Home() {
                           {tender.internalId}
                         </span>
                         <div className="flex items-center gap-2.5">
-                          <span className="text-[11px] font-semibold text-muted-foreground whitespace-nowrap">
-                            Due: <span className="font-bold text-foreground">{formatDate(tender.dueDate)}</span>
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
-                            LIVE
-                          </span>
+                          {(() => {
+                            const due = new Date(tender.dueDate);
+                            const expired = Number.isNaN(due.getTime()) ? true : due.getTime() < Date.now();
+                            return (
+                              <>
+                                <span className={`due-date-badge text-[11px] font-semibold text-muted-foreground whitespace-nowrap ${expired ? "expired" : ""}`}>
+                                  Due: <span className="font-bold text-foreground">{formatDate(tender.dueDate)}</span>
+                                </span>
+                                {!expired && (
+                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                                    LIVE
+                                  </span>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
 
                       {/* Row 2: Full title (wraps, nothing hidden) */}
-                      <h3 className="mt-2 text-sm font-bold text-foreground group-hover:text-primary transition-colors leading-snug">
+                      <h3 className="mt-2 text-sm font-bold text-foreground group-hover:text-primary transition-colors leading-snug text-justify">
                         {tender.title}
                       </h3>
 
