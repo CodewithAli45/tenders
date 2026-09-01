@@ -26,6 +26,11 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
     emdAmount: "",
     publishDate: "",
     dueDate: "",
+    scopeOfWork: "",
+    location: "",
+    contactPerson: "",
+    contactPhone: "",
+    contactEmail: "",
   });
 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -40,7 +45,7 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
     axios.get("/api/organizations").then((res) => setOrganizations(res.data)).catch(() => {});
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -63,6 +68,7 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
 
   const inputClass = "w-full h-11 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all";
   const numberInputClass = `${inputClass} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`;
+  const textareaClass = "w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all min-h-[120px] resize-y";
 
   return (
     <div className="h-full flex flex-col bg-background/50 backdrop-blur-xl">
@@ -131,6 +137,40 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-semibold">₹</span>
                 <input required name="tenderValue" value={formData.tenderValue} onChange={handleChange} type="number" placeholder="0.00" className={`${numberInputClass} pl-8`} />
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-6">
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="h-4 w-4 text-primary" />
+            <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Scope & Location</span>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold ml-1">Scope of Work</label>
+            <textarea name="scopeOfWork" value={formData.scopeOfWork} onChange={handleChange} placeholder="Describe the detailed scope of work for this tender..." className={textareaClass} />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold ml-1">Location / City</label>
+              <input name="location" value={formData.location} onChange={handleChange} type="text" placeholder="e.g. Nagpur, Maharashtra" className={inputClass} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold ml-1">Contact Person</label>
+              <input name="contactPerson" value={formData.contactPerson} onChange={handleChange} type="text" placeholder="Name of the contact officer" className={inputClass} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold ml-1">Contact Phone</label>
+              <input name="contactPhone" value={formData.contactPhone} onChange={handleChange} type="tel" placeholder="+91 00000 00000" className={inputClass} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold ml-1">Contact Email</label>
+              <input name="contactEmail" value={formData.contactEmail} onChange={handleChange} type="email" placeholder="officer@example.com" className={inputClass} />
             </div>
           </div>
         </section>

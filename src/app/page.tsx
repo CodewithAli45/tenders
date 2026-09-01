@@ -58,10 +58,14 @@ interface Tender {
   createdAt?: string | null;
 }
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 const formatDate = (value?: string | null) => {
   if (!value) return "—";
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  if (Number.isNaN(date.getTime())) return "—";
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${d} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 };
 
 const formatValue = (amount?: number | null) => (!amount || amount <= 0 ? "Refer Doc" : `₹${(amount / 10000000).toFixed(2)} Cr`);

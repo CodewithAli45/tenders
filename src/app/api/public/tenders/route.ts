@@ -13,6 +13,11 @@ const fromRow = (row: Record<string, unknown>) => ({
   publishDate: row.publish_date,
   dueDate: row.due_date,
   createdAt: row.created_at,
+  scopeOfWork: row.scope_of_work || "",
+  location: row.location || "",
+  contactPerson: row.contact_person || "",
+  contactPhone: row.contact_phone || "",
+  contactEmail: row.contact_email || "",
 });
 
 export async function GET() {
