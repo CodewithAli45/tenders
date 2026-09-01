@@ -67,11 +67,53 @@ const formatDate = (value?: string | null) => {
 const formatValue = (amount?: number | null) => (!amount || amount <= 0 ? "Refer Doc" : `₹${(amount / 10000000).toFixed(2)} Cr`);
 const formatEmd = (amount?: number | null) => (!amount || amount <= 0 ? "Refer Doc" : `₹${(amount / 100000).toFixed(2)} Lakh`);
 
+type TenderStatus = "live" | "closing" | "expired" | "unknown";
+
+const getTenderStatus = (dueDate?: string | null): TenderStatus => {
+  const due = new Date(dueDate || "");
+  if (Number.isNaN(due.getTime())) return "unknown";
+  const now = Date.now();
+  const diffMs = due.getTime() - now;
+  if (diffMs < 0) return "expired";
+  if (diffMs <= 48 * 60 * 60 * 1000) return "closing";
+  return "live";
+};
+
+const getRelativeDue = (dueDate?: string | null): { label: string; overdue: boolean } => {
+  const due = new Date(dueDate || "");
+  if (Number.isNaN(due.getTime())) return { label: "—", overdue: false };
+  const now = Date.now();
+  const diffMs = due.getTime() - now;
+  const days = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+  if (days < 0) return { label: `Overdue by ${Math.abs(days)}d`, overdue: true };
+  if (days === 0) {
+    const hours = Math.ceil(diffMs / (60 * 60 * 1000));
+    return { label: hours <= 0 ? "Due today" : `Due in ${hours}h`, overdue: false };
+  }
+  return { label: `Due in ${days}d`, overdue: false };
+};
+
+const avatarPalette = ["bg-blue-500", "bg-indigo-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500", "bg-violet-500", "bg-cyan-500"];
+const getAvatarClass = (name: string) => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return avatarPalette[hash % avatarPalette.length];
+};
+const getAvatarInitial = (name: string) => {
+  const clean = (name || "").trim();
+  if (!clean) return "?";
+  const parts = clean.split(/\s+/);
+  const first = parts[0]?.[0] || "";
+  const second = parts.length > 1 ? (parts[parts.length - 1]?.[0] || "") : "";
+  return (first + second).toUpperCase();
+};
+
 export default function Home() {
   const [selectedTender, setSelectedTender] = useState<Tender | null>(null);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterBy, setFilterBy] = useState("DueDate");
+  const [statusFilter, setStatusFilter] = useState<"all" | TenderStatus>("all");
   const [orgFilter, setOrgFilter] = useState<string | null>(null);
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [orgMenuOpen, setOrgMenuOpen] = useState(false);
@@ -156,7 +198,8 @@ export default function Home() {
       t.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.tenderNo?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesOrg = !orgFilter || t.organization === orgFilter;
-    return matchesSearch && matchesOrg;
+    const matchesStatus = statusFilter === "all" || getTenderStatus(t.dueDate) === statusFilter;
+    return matchesSearch && matchesOrg && matchesStatus;
   });
 
   const sortedTenders = [...filteredTenders].sort((a, b) => {
@@ -371,7 +414,7 @@ export default function Home() {
 
             {/* Search & Sort Bar */}
             <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-              <div className="w-full md:w-[28rem]">
+              <div className="hidden w-full md:block md:w-[28rem]">
                 <div className="relative flex items-center">
                   <Search className="absolute left-3.5 h-4 w-4 text-muted-foreground" />
                   <input
@@ -389,13 +432,13 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="relative" ref={filterRef}>
+              <div className="relative hidden md:block" ref={filterRef}>
                 <button
                   onClick={() => setFilterMenuOpen(!filterMenuOpen)}
                   className="flex h-11 items-center gap-2 rounded-xl bg-secondary px-4 text-sm font-semibold border border-border outline-none hover:border-primary transition-all cursor-pointer text-foreground"
                 >
                   <Filter className="h-4 w-4" />
-                  <span>Filter By</span>
+                  <span>{filterBy === "DueDate" ? "Newest" : filterBy === "HighValue" ? "High Value" : "Organization"}</span>
                   <ChevronDown className={`h-4 w-4 transition-transform ${filterMenuOpen ? "rotate-180" : ""}`} />
                 </button>
 
@@ -411,13 +454,14 @@ export default function Home() {
                         onClick={() => { setFilterBy("DueDate"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); }}
                         className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold transition ${filterBy === "DueDate" ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
                       >
-                        Due Date <span className="text-[10px] text-muted-foreground font-bold">Default</span>
+                        Due Date (Newest) <span className="text-[10px] text-muted-foreground font-bold">Default</span>
                       </button>
                       <button
                         onClick={() => { setFilterBy("HighValue"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); }}
                         className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold transition ${filterBy === "HighValue" ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
                       >
                         High Value
+                        {filterBy === "HighValue" && <Check className="h-4 w-4 text-primary" />}
                       </button>
 
                       <div className="relative">
@@ -462,6 +506,35 @@ export default function Home() {
                   )}
                 </AnimatePresence>
               </div>
+
+            </div>
+
+            {/* Status Filter Tabs */}
+            <div className="flex flex-wrap items-center gap-2">
+              {([
+                { key: "all", label: "All", icon: Layers, count: filteredTenders.length },
+                { key: "live", label: "Live", icon: Radio, count: tenders.filter((t) => getTenderStatus(t.dueDate) === "live").length },
+                { key: "closing", label: "Closing Soon", icon: Clock, count: tenders.filter((t) => getTenderStatus(t.dueDate) === "closing").length },
+                { key: "expired", label: "Expired", icon: Archive, count: tenders.filter((t) => getTenderStatus(t.dueDate) === "expired").length },
+              ] as const).map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => { setStatusFilter(tab.key); setCurrentPage(1); }}
+                  className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                    statusFilter === tab.key
+                      ? "bg-primary text-white border-primary shadow-md shadow-primary/25"
+                      : "bg-card border-border text-muted-foreground hover:border-primary hover:text-primary"
+                  }`}
+                >
+                  <tab.icon className="h-3.5 w-3.5" />
+                  {tab.label}
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                    statusFilter === tab.key ? "bg-white/20" : "bg-muted text-muted-foreground"
+                  }`}>
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
             </div>
 
             {/* Tender List - Full Width Single Rows */}
@@ -476,38 +549,54 @@ export default function Home() {
                     <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-lg font-bold text-foreground">No tenders found</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {searchQuery || orgFilter ? "Try adjusting your search or filter." : "Tenders will appear here once added from the admin portal."}
+                      {searchQuery || orgFilter || statusFilter !== "all" ? "Try adjusting your search, status tab or filter." : "Tenders will appear here once added from the admin portal."}
                     </p>
                   </div>
                 ) : (
-                  pagedTenders.map((tender) => (
+                  pagedTenders.map((tender) => {
+                    const status = getTenderStatus(tender.dueDate);
+                    const relDue = getRelativeDue(tender.dueDate);
+                    return (
                     <motion.div
                       key={tender._id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25, ease: "easeOut" }}
                       onClick={() => setSelectedTender(tender)}
-                      className="group cursor-pointer px-4 py-3 hover:bg-muted/40 transition-colors"
+                      whileHover={{ scale: 1.005 }}
+                      className="group relative cursor-pointer px-4 py-3 hover:bg-muted/40 transition-colors border-l-[3px] border-l-transparent hover:border-l-primary"
                     >
-                      {/* Row 1: ID left · Due date + Live right */}
+                      {/* Row 1: ID left · Due date + status right */}
                       <div className="flex items-center justify-between gap-4">
-                        <span className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-mono text-xs font-bold tracking-wide border border-primary/20">
-                          {tender.internalId}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-mono text-xs font-bold tracking-wide border border-primary/20">
+                            {tender.internalId}
+                          </span>
+                          {relDue.overdue && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400">
+                              {relDue.label}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2.5">
-                          {(() => {
-                            const due = new Date(tender.dueDate);
-                            const expired = Number.isNaN(due.getTime()) ? true : due.getTime() < Date.now();
-                            return (
-                              <>
-                                <span className={`due-date-badge text-[11px] font-semibold text-muted-foreground whitespace-nowrap ${expired ? "expired" : ""}`}>
-                                  Due: <span className="font-bold text-foreground">{formatDate(tender.dueDate)}</span>
-                                </span>
-                                {!expired && (
-                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
-                                    LIVE
-                                  </span>
-                                )}
-                              </>
-                            );
-                          })()}
+                          <span className="due-date-badge text-[11px] font-semibold text-muted-foreground whitespace-nowrap">
+                            Due: <span className="font-bold text-foreground">{formatDate(tender.dueDate)}</span>
+                          </span>
+                          {status === "closing" && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                              CLOSING SOON
+                            </span>
+                          )}
+                          {status === "live" && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                              LIVE
+                            </span>
+                          )}
+                          {status === "expired" && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400">
+                              EXPIRED
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -518,21 +607,27 @@ export default function Home() {
 
                       {/* Row 3: Org · Value pill · EMD pill · Published — fixed columns align vertically across all rows */}
                       <div className="mt-2 grid items-center gap-x-5 gap-y-1.5 text-[11px] font-semibold text-muted-foreground grid-cols-[minmax(0,1fr)] sm:grid-cols-[minmax(0,18rem)_9rem_9.5rem_minmax(0,1fr)]">
-                        <span className="break-words">{tender.organization}</span>
+                        <span className="flex items-center gap-2 break-words min-w-0">
+                          <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md text-[9px] font-extrabold text-white ${getAvatarClass(tender.organization)}`}>
+                            {getAvatarInitial(tender.organization)}
+                          </span>
+                          <span className="truncate">{tender.organization}</span>
+                        </span>
                         <span className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/10 px-2 py-0.5">
                           <span className="uppercase tracking-wider text-[10px]">Value</span>
                           <span className="font-bold text-foreground">{formatValue(tender.tenderValue)}</span>
                         </span>
-                        <span className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5">
+                        <span className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-border bg-secondary px-2 py-0.5">
                           <span className="uppercase tracking-wider text-[10px]">EMD</span>
-                          <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatEmd(tender.emdAmount)}</span>
+                          <span className="font-bold text-foreground">{formatEmd(tender.emdAmount)}</span>
                         </span>
                         <span>
                           Published: <span className="font-bold text-foreground">{formatDate(tender.publishDate)}</span>
                         </span>
                       </div>
                     </motion.div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </section>
@@ -643,7 +738,7 @@ export default function Home() {
           </div>
         </div>
         <div className="border-t border-border py-5 px-[4%] md:px-[6%] flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-xs font-semibold text-muted-foreground">© {new Date().getFullYear()} GovTender Pro. All rights reserved.</p>
+          <p className="text-xs font-semibold text-muted-foreground">© 2026 GovTender Pro. All rights reserved.</p>
           <p className="text-xs font-semibold text-muted-foreground">Real-time Government Tender Intelligence Platform</p>
         </div>
       </footer>

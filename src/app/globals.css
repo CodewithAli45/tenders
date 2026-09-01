@@ -171,7 +171,7 @@ button,
   border-width: 1.5px;
   border-style: solid;
   animation: pulse-border 2.5s ease-in-out infinite;
-  border-color: rgba(239, 68, 68, 0.6);
+  border-color: rgba(239, 68, 68, 0.85);
 }
 
 .due-date-badge.expired {
