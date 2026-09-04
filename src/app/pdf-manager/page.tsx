@@ -16,6 +16,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import Link from "next/link";
 import { PDFDocument } from "pdf-lib";
 import JSZip from "jszip";
 import {
@@ -115,13 +116,13 @@ export default function PDFManagerPage() {
           <div className="flex items-center justify-between h-14">
             {/* Left: back button + title */}
             <div className="flex items-center gap-3">
-              <a
+              <Link
                 href="/"
                 className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span className="hidden sm:inline">Home</span>
-              </a>
+              </Link>
               <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
               <div className="flex items-center gap-2">
                 <FileText className="h-4.5 w-4.5 text-primary" />

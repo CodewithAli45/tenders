@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Building2, FileText, FolderOpen, Home, LayoutDashboard, LogOut, Plus, RefreshCw, Search, X } from "lucide-react";
@@ -47,7 +48,7 @@ export function AdminDashboard({ onClose, isModal = false }: AdminDashboardProps
       <nav className="flex-1 space-y-1 p-2 lg:p-3">
         {([{ id: "tenders", label: "Tenders", icon: FileText }, { id: "organizations", label: "Organization", icon: Building2 }, { id: "attachments", label: "Attachment", icon: FolderOpen }] as const).map((item) => <button key={item.id} onClick={() => { setSection(item.id); closeEditor(); }} className={`flex w-full items-center justify-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition lg:justify-start ${section === item.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}><item.icon className="h-4 w-4 shrink-0" /><span className="hidden lg:inline">{item.label}</span></button>)}
       </nav>
-      <div className="border-t border-border p-2 space-y-1 lg:p-3"><a href="/" className="flex w-full items-center justify-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground lg:justify-start"><Home className="h-4 w-4 shrink-0" /><span className="hidden lg:inline">Back to Home</span></a><button onClick={logout} disabled={isLoggingOut} className="flex w-full items-center justify-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-60 lg:justify-start"><LogOut className="h-4 w-4 shrink-0" /><span className="hidden lg:inline">{isLoggingOut ? "Signing out…" : "Logout"}</span></button></div>
+      <div className="border-t border-border p-2 space-y-1 lg:p-3"><Link href="/" className="flex w-full items-center justify-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground lg:justify-start"><Home className="h-4 w-4 shrink-0" /><span className="hidden lg:inline">Back to Home</span></Link><button onClick={logout} disabled={isLoggingOut} className="flex w-full items-center justify-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-60 lg:justify-start"><LogOut className="h-4 w-4 shrink-0" /><span className="hidden lg:inline">{isLoggingOut ? "Signing out…" : "Logout"}</span></button></div>
     </aside>
 
     <main className="min-w-0 flex-1 overflow-hidden">

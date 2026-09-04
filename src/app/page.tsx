@@ -135,10 +135,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!filterMenuOpen) setOrgMenuOpen(false);
-  }, [filterMenuOpen]);
-
-  useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
         setFilterMenuOpen(false);
@@ -455,13 +451,13 @@ export default function Home() {
                       className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-card border border-border shadow-2xl p-2 z-[100]"
                     >
                       <button
-                        onClick={() => { setFilterBy("DueDate"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); }}
+                        onClick={() => { setFilterBy("DueDate"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); setOrgMenuOpen(false); }}
                         className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold transition ${filterBy === "DueDate" ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
                       >
                         Due Date (Newest) <span className="text-[10px] text-muted-foreground font-bold">Default</span>
                       </button>
                       <button
-                        onClick={() => { setFilterBy("HighValue"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); }}
+                        onClick={() => { setFilterBy("HighValue"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); setOrgMenuOpen(false); }}
                         className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold transition ${filterBy === "HighValue" ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
                       >
                         High Value
@@ -486,7 +482,7 @@ export default function Home() {
                               className="absolute right-0 top-full mt-1 w-full max-h-80 overflow-y-auto rounded-2xl bg-card border border-border shadow-2xl p-2 z-[110] sm:right-full sm:top-0 sm:mt-0 sm:mr-1.5 sm:w-60"
                             >
                               <button
-                                onClick={() => { setFilterBy("Organization"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); }}
+                                onClick={() => { setFilterBy("Organization"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); setOrgMenuOpen(false); }}
                                 className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition hover:bg-muted cursor-pointer"
                               >
                                 All Organizations
@@ -495,7 +491,7 @@ export default function Home() {
                               {organizations.map((org) => (
                                 <button
                                   key={org}
-                                  onClick={() => { setFilterBy("Organization"); setOrgFilter(org); setCurrentPage(1); setFilterMenuOpen(false); }}
+                                  onClick={() => { setFilterBy("Organization"); setOrgFilter(org); setCurrentPage(1); setFilterMenuOpen(false); setOrgMenuOpen(false); }}
                                   className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm transition hover:bg-muted cursor-pointer"
                                 >
                                   <span className="truncate">{org}</span>
