@@ -18,11 +18,13 @@ const fromRow = (row: Record<string, unknown>) => ({
   contactPerson: row.contact_person || "",
   contactPhone: row.contact_phone || "",
   contactEmail: row.contact_email || "",
+  tenderDocuments: ((row.attachments as Record<string, unknown>[] | undefined) || []).filter((file) => file.attachment_type === "document").map((file) => file.file_url),
+  corrigendumFiles: ((row.attachments as Record<string, unknown>[] | undefined) || []).filter((file) => file.attachment_type === "corrigendum").map((file) => file.file_url),
 });
 
 export async function GET() {
   try {
-    const response = await supabaseRequest("/rest/v1/tenders?select=*&order=created_at.desc");
+    const response = await supabaseRequest("/rest/v1/tenders?select=*,attachments(attachment_type,file_url)&order=created_at.desc");
     return NextResponse.json((await response.json()).map(fromRow));
   } catch (error) {
     console.error("Public tender load error:", error);

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, FileText, Save, AlertCircle, Paperclip, CheckCircle2, Plus, MapPin, Phone, Mail, User, Building2, Calendar, Clock, IndianRupee, ShieldCheck, Gavel, FileCheck } from "lucide-react";
+import { X, FileText, Save, AlertCircle, Paperclip, CheckCircle2, Plus, MapPin, Phone, Mail, User, Building2, Calendar, Clock, IndianRupee, ShieldCheck, Gavel, FileCheck, Trash2 } from "lucide-react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -33,9 +33,12 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
   const [formData, setFormData] = useState({ ...tender });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showVerifyPrompt, setShowVerifyPrompt] = useState(false);
+  const [uploadType, setUploadType] = useState<"document" | "corrigendum">("document");
+  const [deletePending, setDeletePending] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -45,21 +48,29 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = "";
 
+    const isCorrigendum = uploadType === "corrigendum";
     setIsUploading(true);
     setError(null);
 
     const uploadData = new FormData();
     uploadData.append("file", file);
     uploadData.append("tenderId", tender.internalId);
-    uploadData.append("type", "document");
+    uploadData.append("type", uploadType);
 
     try {
       const response = await axios.post("/api/upload", uploadData);
       const url = response.data.url;
-      const updatedTender = { ...formData, tenderDocuments: [...(formData.tenderDocuments || []), url] };
+      const updatedTender = {
+        ...formData,
+        [isCorrigendum ? "corrigendumFiles" : "tenderDocuments"]: [
+          ...(isCorrigendum ? formData.corrigendumFiles || [] : formData.tenderDocuments || []),
+          url,
+        ],
+      };
       setFormData(updatedTender);
-      setSuccess("File uploaded successfully!");
+      setSuccess(isCorrigendum ? "Corrigendum uploaded successfully!" : "File uploaded successfully!");
       await axios.patch(`/api/tenders/${tender._id}`, updatedTender);
       onUpdate();
       setTimeout(() => setSuccess(null), 3000);
@@ -67,6 +78,32 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
       setError("Failed to upload file. Please try again.");
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleDeleteFile = async (url: string) => {
+    if (deletePending !== url) {
+      setDeletePending(url);
+      return;
+    }
+    setIsDeleting(true);
+    setError(null);
+    try {
+      await axios.delete("/api/attachments", { params: { url } });
+      const updatedTender = {
+        ...formData,
+        tenderDocuments: (formData.tenderDocuments || []).filter((u: string) => u !== url),
+        corrigendumFiles: (formData.corrigendumFiles || []).filter((u: string) => u !== url),
+      };
+      setFormData(updatedTender);
+      setSuccess("File deleted successfully!");
+      onUpdate();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch {
+      setError("Failed to delete file. Please try again.");
+    } finally {
+      setIsDeleting(false);
+      setDeletePending(null);
     }
   };
 
@@ -221,36 +258,61 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
                 <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                 Document Management
               </h3>
-              <label className="text-xs font-bold text-muted-foreground ml-1 uppercase flex items-center justify-between">
-                Tender Documents (PDF)
-                <span className="text-[10px] lowercase font-normal italic">Cloud folder: {tender.internalId}</span>
-              </label>
-              <div className="grid grid-cols-1 gap-3">
-                {formData.tenderDocuments?.map((doc: string, idx: number) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-primary/5 border border-primary/10 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <Paperclip className="h-4 w-4 text-primary" />
-                      <span className="text-xs font-medium truncate max-w-[200px]">Document_{idx + 1}.pdf</span>
-                    </div>
-                    <a href={doc} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-primary hover:underline">VIEW</a>
-                  </div>
-                ))}
-                {!readOnly && (
-                  <div className="relative group/upload">
-                    <input type="file" accept=".pdf" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer z-10" disabled={isUploading} />
-                    <div className="p-4 border-2 border-dashed border-primary/20 dark:border-primary/10 rounded-xl flex items-center justify-center gap-2 group-hover/upload:border-primary/50 transition-all bg-primary/[0.02] group-hover/upload:bg-primary/[0.05]">
-                      {isUploading ? (
-                        <div className="h-4 w-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <Plus className="h-4 w-4 text-primary" />
-                          <span className="text-xs font-bold text-primary">Add {formData.tenderDocuments?.length > 0 ? 'More' : ''} Tender PDF</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
+
+              <div className="flex p-1 bg-muted rounded-xl gap-1">
+                <button
+                  type="button"
+                  onClick={() => setUploadType("document")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${uploadType === "document" ? "bg-primary text-white shadow-md shadow-primary/25" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  Tender Docs
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${uploadType === "document" ? "bg-white/20" : "bg-card text-muted-foreground"}`}>{formData.tenderDocuments?.length || 0}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUploadType("corrigendum")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${uploadType === "corrigendum" ? "bg-primary text-white shadow-md shadow-primary/25" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <FileCheck className="h-3.5 w-3.5" />
+                  Corrigendum
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${uploadType === "corrigendum" ? "bg-white/20" : "bg-card text-muted-foreground"}`}>{formData.corrigendumFiles?.length || 0}</span>
+                </button>
               </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-muted-foreground ml-1 uppercase flex items-center justify-between">
+                  Tender Documents (PDF)
+                  <span className="text-[10px] lowercase font-normal italic">Cloud folder: {tender.internalId}</span>
+                </label>
+                <FileList files={formData.tenderDocuments} label="Document" canDelete={!readOnly} deleting={isDeleting} pendingDelete={deletePending} onDelete={handleDeleteFile} />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-muted-foreground ml-1 uppercase">
+                  Corrigendum Files (PDF)
+                </label>
+                <FileList files={formData.corrigendumFiles} label="Corrigendum" canDelete={!readOnly} deleting={isDeleting} pendingDelete={deletePending} onDelete={handleDeleteFile} />
+              </div>
+
+              {!readOnly && (
+                <div className="relative group/upload">
+                  <input type="file" accept=".pdf" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer z-10" disabled={isUploading || isDeleting} />
+                  <div className="p-4 border-2 border-dashed border-primary/20 dark:border-primary/10 rounded-xl flex flex-col items-center justify-center gap-1.5 group-hover/upload:border-primary/50 transition-all bg-primary/[0.02] group-hover/upload:bg-primary/[0.05] text-center">
+                    {isUploading ? (
+                      <div className="h-4 w-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <span className="flex items-center gap-2">
+                          <Plus className="h-4 w-4 text-primary" />
+                          <span className="text-xs font-bold text-primary">Add {uploadType === "corrigendum" ? "Corrigendum" : "Tender"} PDF</span>
+                        </span>
+                        <span className="text-[10px] text-muted-foreground italic">{uploadType === "corrigendum" ? "Extension or technical-parameter corrigendum" : "Original tender documents"}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         </div>
@@ -292,6 +354,46 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function FileList({ files, label, canDelete, deleting, pendingDelete, onDelete }: { files?: string[]; label: string; canDelete: boolean; deleting: boolean; pendingDelete: string | null; onDelete: (url: string) => void }) {
+  if (!files || files.length === 0) {
+    return (
+      <div className="flex items-center gap-2 p-3 rounded-xl border border-dashed border-border text-muted-foreground">
+        <FileText className="h-4 w-4 shrink-0" />
+        <span className="text-xs">No {label.toLowerCase()} files uploaded yet.</span>
+      </div>
+    );
+  }
+  return (
+    <div className="grid grid-cols-1 gap-2">
+      {files.map((url, idx) => {
+        const isPending = pendingDelete === url;
+        return (
+          <div key={url} className={`flex items-center justify-between gap-2 p-3 rounded-xl border transition-all ${isPending ? "border-destructive/40 bg-destructive/5" : "border-primary/10 bg-primary/5"}`}>
+            <div className="flex items-center gap-3 min-w-0">
+              <Paperclip className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-xs font-medium truncate max-w-[220px]">{label}_{idx + 1}.pdf</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <a href={url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-primary hover:underline cursor-pointer">VIEW</a>
+              {canDelete && (
+                isPending ? (
+                  <button onClick={() => onDelete(url)} disabled={deleting} className="px-2 py-1 rounded-lg bg-destructive text-white text-[10px] font-bold hover:brightness-110 transition-all cursor-pointer">
+                    {deleting ? "Deleting…" : "Confirm?"}
+                  </button>
+                ) : (
+                  <button onClick={() => onDelete(url)} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all cursor-pointer" title="Delete this file" aria-label="Delete file">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
