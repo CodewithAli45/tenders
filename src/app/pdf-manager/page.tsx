@@ -15,7 +15,7 @@
 
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import { PDFDocument } from "pdf-lib";
 import JSZip from "jszip";
@@ -39,6 +39,10 @@ import {
   Merge,
   X,
   ArrowDownToLine,
+  ShieldCheck,
+  FileDown,
+  Minimize2,
+  Eraser,
 } from "lucide-react";
 
 /* -------------------------------------------------------------------------- */
@@ -55,7 +59,7 @@ interface PDFFile {
 }
 
 /** Operation tabs available in the PDF manager */
-type Operation = "merge" | "split" | "arrange";
+type Operation = "merge" | "split" | "arrange" | "compress";
 
 /* -------------------------------------------------------------------------- */
 /*                              HELPER UTILITIES                              */
@@ -131,16 +135,17 @@ export default function PDFManagerPage() {
             </div>
 
             {/* Right: operation tabs */}
-            <nav className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+            <nav className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5 overflow-x-auto">
               {([
                 { id: "merge" as Operation, label: "Merge", icon: Merge },
                 { id: "split" as Operation, label: "Split", icon: SplitSquareVertical },
                 { id: "arrange" as Operation, label: "Arrange", icon: MoveVertical },
+                { id: "compress" as Operation, label: "Compress", icon: Minimize2 },
               ]).map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
                     activeTab === tab.id
                       ? "bg-card text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -156,10 +161,20 @@ export default function PDFManagerPage() {
       </header>
 
       {/* ---- Render the active operation view ---- */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+        {/* Privacy banner — all operations run in the browser */}
+        <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-primary/5 border border-primary/15 text-xs text-muted-foreground">
+          <ShieldCheck className="h-4 w-4 text-primary flex-shrink-0" />
+          <span>
+            100% private & in-browser. Your PDFs are never uploaded — every operation runs
+            locally on your device and nothing ever leaves your machine.
+          </span>
+        </div>
+
         {activeTab === "merge" && <MergeView />}
         {activeTab === "split" && <SplitView />}
         {activeTab === "arrange" && <ArrangeView />}
+        {activeTab === "compress" && <CompressView />}
       </main>
     </div>
   );
@@ -280,7 +295,7 @@ function MergeView() {
         copiedPages.forEach((page) => mergedDoc.addPage(page));
       }
 
-      const mergedBytes = await mergedDoc.save();
+      const mergedBytes = await mergedDoc.save({ useObjectStreams: true });
       const blob = uint8ToBlob(mergedBytes, "application/pdf");
       triggerDownload(blob, "merged.pdf");
 
@@ -319,23 +334,23 @@ function MergeView() {
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`relative flex flex-col items-center justify-center gap-3 p-10 rounded-xl border-2 border-dashed transition-all cursor-pointer ${
+        className={`relative flex flex-col items-center justify-center gap-3 p-10 sm:p-14 min-h-[220px] rounded-xl border-2 border-dashed transition-all cursor-pointer bg-gradient-to-b from-primary/[0.03] to-muted/20 ${
           isDragging
-            ? "border-primary bg-primary/5"
+            ? "border-primary bg-primary/5 scale-[1.01]"
             : "border-border hover:border-primary/50 hover:bg-muted/30"
         }`}
       >
-        <div className={`h-12 w-12 rounded-xl flex items-center justify-center transition-colors ${
-          isDragging ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+        <div className={`h-14 w-14 rounded-2xl flex items-center justify-center transition-all ${
+          isDragging ? "bg-primary/15 text-primary scale-110" : "bg-card text-primary border border-border shadow-sm"
         }`}>
-          <Upload className="h-5.5 w-5.5" />
+          <Upload className="h-6 w-6" />
         </div>
         <div className="text-center">
-          <p className="text-sm font-medium">
+          <p className="text-sm font-semibold">
             {isDragging ? "Drop PDF files here" : "Drag & drop PDF files here"}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            or click to browse
+            or <span className="text-primary font-medium underline underline-offset-2">click to browse</span> — files stay on your device
           </p>
         </div>
         <input
@@ -351,15 +366,25 @@ function MergeView() {
       {/* File list + merge controls */}
       {files.length > 0 && (
         <>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{files.length} file{files.length !== 1 ? "s" : ""}</span>
+              <span className="text-sm font-semibold">{files.length} file{files.length !== 1 ? "s" : ""}</span>
               <span className="text-xs text-muted-foreground">
-                ({files.reduce((acc, f) => acc + f.pageCount, 0)} total pages)
+                · {files.reduce((acc, f) => acc + f.pageCount, 0)} pages ·{" "}
+                {formatSize(files.reduce((acc, f) => acc + f.size, 0))}
               </span>
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Clear all */}
+              <button
+                onClick={() => setFiles([])}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors cursor-pointer"
+              >
+                <Eraser className="h-3 w-3" />
+                <span className="hidden sm:inline">Clear All</span>
+              </button>
+
               {/* Sort toggle button */}
               <button
                 onClick={cycleSort}
@@ -378,7 +403,7 @@ function MergeView() {
               {/* Add more files button */}
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-muted transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer"
               >
                 <Plus className="h-3 w-3" />
                 Add Files
@@ -387,10 +412,12 @@ function MergeView() {
           </div>
 
           {/* Scrollable file list */}
-          <div className="border border-border rounded-xl divide-y divide-border bg-card">
+          <div className="border border-border rounded-xl divide-y divide-border bg-card overflow-hidden">
             {displayFiles.map((file) => (
-              <div key={file.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors group">
-                <File className="h-4 w-4 text-red-500 flex-shrink-0" />
+              <div key={file.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
+                <div className="h-8 w-8 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                  <File className="h-4 w-4 text-red-500" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{file.name}</p>
                   <p className="text-xs text-muted-foreground">
@@ -399,7 +426,8 @@ function MergeView() {
                 </div>
                 <button
                   onClick={() => removeFile(file.id)}
-                  className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all cursor-pointer"
+                  aria-label={`Remove ${file.name}`}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -407,12 +435,15 @@ function MergeView() {
             ))}
           </div>
 
-          {/* Merge action button */}
-          <div className="flex justify-end">
+          {/* Merge action bar */}
+          <div className="flex items-center justify-between gap-3 p-4 rounded-xl bg-muted/30 border border-border">
+            <p className="text-xs text-muted-foreground hidden sm:block">
+              Files are combined in the order shown above.
+            </p>
             <button
               onClick={handleMerge}
               disabled={files.length < 2 || processing}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/20 hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/20 hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
             >
               {processing ? (
                 <>
@@ -566,7 +597,7 @@ function SplitView() {
         const copiedPages = await newDoc.copyPages(srcDoc, groups[0]);
         copiedPages.forEach((page) => newDoc.addPage(page));
 
-        const newBytes = await newDoc.save();
+        const newBytes = await newDoc.save({ useObjectStreams: true });
         const blob = uint8ToBlob(newBytes, "application/pdf");
         const start = groups[0][0] + 1;
         const end = groups[0][groups[0].length - 1] + 1;
@@ -583,7 +614,7 @@ function SplitView() {
           const copiedPages = await newDoc.copyPages(srcDoc, group);
           copiedPages.forEach((page) => newDoc.addPage(page));
 
-          const newBytes = await newDoc.save();
+const newBytes = await newDoc.save({ useObjectStreams: true });
           const start = group[0] + 1;
           const end = group[group.length - 1] + 1;
           const fileName = group.length === 1
@@ -627,7 +658,7 @@ function SplitView() {
       {!pdfFile ? (
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="flex flex-col items-center justify-center gap-3 p-10 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer"
+          className="flex flex-col items-center justify-center gap-3 p-10 sm:p-14 min-h-[220px] rounded-xl border-2 border-dashed bg-gradient-to-b from-primary/[0.03] to-muted/20 border-border hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer"
         >
           <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
             <Upload className="h-5.5 w-5.5" />
@@ -833,7 +864,7 @@ function ArrangeView() {
       const copiedPages = await newDoc.copyPages(srcDoc, pageOrder);
       copiedPages.forEach((page) => newDoc.addPage(page));
 
-      const newBytes = await newDoc.save();
+      const newBytes = await newDoc.save({ useObjectStreams: true });
       const blob = uint8ToBlob(newBytes, "application/pdf");
       const baseName = pdfFile.name.replace(/\.pdf$/i, "");
       triggerDownload(blob, `${baseName}_arranged.pdf`);
@@ -872,7 +903,7 @@ function ArrangeView() {
       {!pdfFile ? (
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="flex flex-col items-center justify-center gap-3 p-10 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer"
+          className="flex flex-col items-center justify-center gap-3 p-10 sm:p-14 min-h-[220px] rounded-xl border-2 border-dashed bg-gradient-to-b from-primary/[0.03] to-muted/20 border-border hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer"
         >
           <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
             <Upload className="h-5.5 w-5.5" />
@@ -992,6 +1023,310 @@ function ArrangeView() {
               )}
             </button>
           </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ========================================================================== */
+/*                               COMPRESS VIEW                                */
+/* ========================================================================== */
+
+/**
+ * CompressView - Reduce the file size of a single PDF.
+ *
+ * Runs entirely in the browser using pdf-lib. It strips unused/redundant
+ * objects and re-packs everything into object streams, which typically
+ * produces a smaller file. Files never leave the device.
+ */
+function CompressView() {
+  const [pdfFile, setPdfFile] = useState<PDFFile | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [result, setResult] = useState<{ originalSize: number; compressedSize: number } | null>(null);
+  const [settings, setSettings] = useState<"screen" | "ebook" | "printer">("ebook");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const workerRef = useRef<Worker | null>(null);
+
+  useEffect(() => {
+    return () => {
+      workerRef.current?.terminate();
+    };
+  }, []);
+
+  const handleFileLoad = useCallback(async (file: File) => {
+    setError(null);
+    setSuccess(false);
+    setResult(null);
+
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      setError("Only PDF files are accepted.");
+      return;
+    }
+
+    try {
+      const data = await readFileBuffer(file);
+      const pdfDoc = await PDFDocument.load(data, { ignoreEncryption: true });
+      setPdfFile({
+        id: uid(),
+        name: file.name,
+        size: file.size,
+        pageCount: pdfDoc.getPageCount(),
+        data,
+      });
+    } catch {
+      setError("Failed to read the PDF file.");
+    }
+  }, []);
+
+  const handleCompress = useCallback(() => {
+    if (!pdfFile) return;
+    setProcessing(true);
+    setError(null);
+    setSuccess(false);
+    setResult(null);
+    setProgress("Preparing…");
+
+    const id = Date.now();
+
+    let worker: Worker;
+    try {
+      worker = new Worker("/gs-compress.worker.js");
+    } catch {
+      setError("Compression engine is not available in this browser.");
+      setProcessing(false);
+      return;
+    }
+    workerRef.current?.terminate();
+    workerRef.current = worker;
+
+    worker.onmessage = (e: MessageEvent) => {
+      const msg = e.data;
+      if (msg.id !== id) return;
+
+      if (msg.type === "progress") {
+        setProgress(msg.message);
+      } else if (msg.type === "result") {
+        const bytes = new Uint8Array(msg.data);
+        const originalSize = pdfFile.size;
+        setProcessing(false);
+        setProgress(null);
+        setResult({ originalSize, compressedSize: bytes.length });
+
+        if (bytes.length < originalSize) {
+          const blob = uint8ToBlob(bytes, "application/pdf");
+          const baseName = pdfFile.name.replace(/\.pdf$/i, "");
+          triggerDownload(blob, `${baseName}_compressed.pdf`);
+          setSuccess(true);
+          setTimeout(() => setSuccess(false), 4000);
+        }
+
+        worker.terminate();
+        workerRef.current = null;
+      } else if (msg.type === "error") {
+        setProcessing(false);
+        setProgress(null);
+        setError(msg.message || "Failed to compress the PDF.");
+        worker.terminate();
+        workerRef.current = null;
+      }
+    };
+
+    worker.onerror = () => {
+      setProcessing(false);
+      setProgress(null);
+      setError("Compression engine failed to load. Please try again.");
+      worker.terminate();
+      workerRef.current = null;
+    };
+
+    worker.postMessage(
+      {
+        type: "compress",
+        id,
+        data: pdfFile.data.buffer.slice(
+          pdfFile.data.byteOffset,
+          pdfFile.data.byteOffset + pdfFile.data.byteLength
+        ) as ArrayBuffer,
+        settings,
+      },
+      [
+        pdfFile.data.buffer.slice(
+          pdfFile.data.byteOffset,
+          pdfFile.data.byteOffset + pdfFile.data.byteLength
+        ) as ArrayBuffer,
+      ]
+    );
+  }, [pdfFile, settings]);
+
+  const savingsPct =
+    result && result.originalSize > 0
+      ? Math.max(0, Math.round((1 - result.compressedSize / result.originalSize) * 100))
+      : 0;
+
+  return (
+    <div className="space-y-5">
+      {error && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="ml-auto cursor-pointer">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+      {success && result && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm">
+          <Check className="h-4 w-4 flex-shrink-0" />
+          <span>Compressed PDF downloaded successfully!</span>
+        </div>
+      )}
+
+      {!pdfFile ? (
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          className="flex flex-col items-center justify-center gap-3 p-10 sm:p-14 min-h-[220px] rounded-xl border-2 border-dashed bg-gradient-to-b from-primary/[0.03] to-muted/20 border-border hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer"
+        >
+          <div className="h-14 w-14 rounded-2xl flex items-center justify-center bg-card text-primary border border-border shadow-sm">
+            <Minimize2 className="h-6 w-6" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-semibold">Drop or click to select a PDF</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Reduces file size by removing redundant data
+            </p>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,application/pdf"
+            onChange={(e) => e.target.files?.[0] && handleFileLoad(e.target.files[0])}
+            className="hidden"
+          />
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
+            <div className="flex items-center gap-3">
+              <FileText className="h-5 w-5 text-red-500" />
+              <div>
+                <p className="text-sm font-medium">{pdfFile.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {pdfFile.pageCount} pages · {formatSize(pdfFile.size)}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setPdfFile(null); setResult(null); }}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                Replace
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Compression level
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { id: "screen" as const, label: "Smallest", desc: "For viewing" },
+                { id: "ebook" as const, label: "Recommended", desc: "For reading" },
+                { id: "printer" as const, label: "High quality", desc: "For printing" },
+              ]).map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => setSettings(opt.id)}
+                  className={`flex flex-col items-center gap-0.5 p-2.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                    settings === opt.id
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border hover:border-primary/30 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {opt.label}
+                  <span className="text-[10px] text-muted-foreground">{opt.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={handleCompress}
+            disabled={processing}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/20 hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+          >
+            {processing ? (
+              <>
+                <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                {progress ?? "Compressing..."}
+              </>
+            ) : (
+              <>
+                <Minimize2 className="h-4 w-4" />
+                Compress PDF
+              </>
+            )}
+          </button>
+
+          {result && (
+            <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
+                  savingsPct > 0 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground"
+                }`}>
+                  <FileDown className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">
+                    {savingsPct > 0 ? `${savingsPct}% smaller` : "No size reduction possible"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    This PDF is already well compressed.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="p-3 rounded-lg bg-muted/40">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Original</p>
+                  <p className="text-sm font-bold mt-1">{formatSize(result.originalSize)}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/40">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Compressed</p>
+                  <p className="text-sm font-bold mt-1">{formatSize(result.compressedSize)}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-emerald-500/10">
+                  <p className="text-[10px] uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Saved</p>
+                  <p className="text-sm font-bold mt-1">
+                    {formatSize(Math.max(0, result.originalSize - result.compressedSize))}
+                  </p>
+                </div>
+              </div>
+
+              {savingsPct > 0 && (
+                <button
+                  onClick={handleCompress}
+                  disabled={processing}
+                  className="w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/20 hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                >
+                  <Download className="h-4 w-4" />
+                  Download Compressed PDF
+                </button>
+              )}
+            </div>
+          )}
+
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Compression runs locally in a background worker using a browser build of
+            Ghostscript — your PDF never leaves this device. Text stays selectable and
+            searchable, fonts are embedded, and image-heavy (scanned) files are
+            downsampled to shrink significantly.
+          </p>
         </>
       )}
     </div>

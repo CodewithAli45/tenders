@@ -38,6 +38,7 @@ import {
   ChevronRight,
   Mail,
   MapPin,
+  Menu,
   X
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -125,6 +126,9 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const [tenders, setTenders] = useState<Tender[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
+  const mobileDrawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/public/tenders")
@@ -140,6 +144,10 @@ export default function Home() {
         setFilterMenuOpen(false);
         setOrgMenuOpen(false);
       }
+      if (mobileDrawerRef.current && !mobileDrawerRef.current.contains(event.target as Node) && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+        setMobileExpanded(null);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("touchstart", handleClickOutside);
@@ -147,7 +155,7 @@ export default function Home() {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
     };
-  }, []);
+  }, [mobileMenuOpen]);
 
   const navItems = [
     { label: "Home", href: "/" },
@@ -166,7 +174,7 @@ export default function Home() {
       label: "Tools",
       href: "/tools",
       dropdown: [
-        { label: "PDF Manager", href: "/pdf-manager", description: "Merge, split & edit tender documents", icon: FileText, target: "_blank" },
+        { label: "PDF Manager", href: "/pdf-manager", description: "Merge, split, arrange & compress PDFs privately in-browser", icon: FileText, target: "_blank" },
         { label: "Calculator", href: "/tools/calculator", description: "EMD & cost estimation toolkit", icon: Calculator },
         { label: "AutoCAD Viewer", href: "/tools/autocad-viewer", description: "Preview DWG & blueprint files", icon: Layers },
         { label: "MS Excel", href: "/tools/ms-excel", description: "Export & process tender BOQs", icon: FileSpreadsheet },
@@ -259,6 +267,14 @@ export default function Home() {
       {/* Main Navigation Bar */}
       <nav className="fixed top-9 z-50 w-full border-b border-border/80 bg-card/90 backdrop-blur-xl shadow-xs">
         <div className="flex h-16 w-full items-center justify-between px-[2%] gap-4">
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex lg:hidden h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-all cursor-pointer"
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
           <Link href="/" className="flex items-center gap-3 flex-shrink-0 group">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 shadow-md shadow-blue-500/20 group-hover:scale-105 transition-all">
               <Gavel className="h-5 w-5 text-white" />
@@ -352,6 +368,101 @@ export default function Home() {
           </div>
         </div>
       </nav>
+
+      {/* Mobile Left Sidebar Drawer */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[110] bg-slate-950/50 backdrop-blur-sm lg:hidden"
+            onClick={() => { setMobileMenuOpen(false); setMobileExpanded(null); }}
+          />
+        )}
+      </AnimatePresence>
+
+      <motion.aside
+        ref={mobileDrawerRef}
+        initial={{ x: "-100%" }}
+        animate={{ x: mobileMenuOpen ? "0%" : "-100%" }}
+        transition={{ type: "tween", duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
+        className="fixed top-9 bottom-0 left-0 z-[120] flex w-[85%] max-w-sm flex-col bg-card border-r border-border shadow-2xl lg:hidden overflow-y-auto"
+        aria-hidden={!mobileMenuOpen}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-700 to-indigo-600">
+              <Gavel className="h-4 w-4 text-white" />
+            </div>
+            <span className="text-sm font-extrabold tracking-tight text-foreground">GovTender <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-bold uppercase tracking-wider">Pro</span></span>
+          </div>
+          <button
+            onClick={() => { setMobileMenuOpen(false); setMobileExpanded(null); }}
+            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+            aria-label="Close menu"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-1">
+          {navItems.map((item) => (
+            <div key={item.label} className="rounded-xl">
+              {item.dropdown ? (
+                <>
+                  <button
+                    onClick={() => setMobileExpanded(mobileExpanded === item.label ? null : item.label)}
+                    className="flex w-full items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all cursor-pointer"
+                  >
+                    <span>{item.label}</span>
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${mobileExpanded === item.label ? "rotate-180 text-primary" : ""}`} />
+                  </button>
+                  <AnimatePresence>
+                    {mobileExpanded === item.label && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="space-y-0.5 pl-2 pr-1 pb-1">
+                          {item.dropdown.map((subItem) => {
+                            const IconComponent = subItem.icon || FileText;
+                            return (
+                              <Link
+                                key={subItem.label}
+                                href={subItem.href}
+                                target={(subItem as Record<string, unknown>).target as string | undefined}
+                                rel={(subItem as Record<string, unknown>).target ? "noopener noreferrer" : undefined}
+                                onClick={() => { setMobileMenuOpen(false); setMobileExpanded(null); }}
+                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all cursor-pointer"
+                              >
+                                <IconComponent className="h-4 w-4 text-primary/80 flex-shrink-0" />
+                                <span className="flex-1 min-w-0">{subItem.label}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </>
+              ) : (
+                <Link
+                  href={item.href}
+                  onClick={() => { setMobileMenuOpen(false); setMobileExpanded(null); }}
+                  className="flex items-center px-3 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all cursor-pointer"
+                >
+                  {item.label}
+                </Link>
+              )}
+            </div>
+          ))}
+        </nav>
+      </motion.aside>
 
       {/* Main Full-Screen Layout Container */}
       <div className="flex w-full flex-1 pt-28 px-[1%] gap-6">
@@ -573,7 +684,7 @@ export default function Home() {
                             {tender.internalId}
                           </span>
                           {relDue.overdue && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400">
+                            <span className="hidden sm:inline-block px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400">
                               {relDue.label}
                             </span>
                           )}
