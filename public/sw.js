@@ -1,4 +1,4 @@
-const CACHE_NAME = "govtender-hub-v1";
+const CACHE_NAME = "govtender-hub-v2";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -38,6 +38,10 @@ self.addEventListener("fetch", (event) => {
         )
     );
     return;
+  }
+
+  if (url.pathname.startsWith("/api/")) {
+    return fetch(request);
   }
 
   event.respondWith(
