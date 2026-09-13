@@ -3,48 +3,54 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f7f7f5;
+  --foreground: #202326;
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #202326;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #2563eb;
+  --popover-foreground: #202326;
+  --primary: #b86b35;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #1e293b;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #059669;
+  --secondary: #eceeeb;
+  --secondary-foreground: #687078;
+  --muted: #eceeeb;
+  --muted-foreground: #687078;
+  --accent: #2e7d52;
   --accent-foreground: #ffffff;
-  --destructive: #dc2626;
+  --destructive: #c54a4a;
   --destructive-foreground: #ffffff;
-  --border: #e2e8f0;
-  --input: #cbd5e1;
-  --ring: #2563eb;
+  --success: #2e7d52;
+  --warning: #c48719;
+  --danger: #c54a4a;
+  --border: #e2e4e5;
+  --input: #d6d9da;
+  --ring: #b86b35;
   --radius: 0.75rem;
 }
 
 .dark {
-  --background: #090d16;
-  --foreground: #f8fafc;
-  --card: #0f172a;
-  --card-foreground: #f8fafc;
-  --popover: #0f172a;
-  --popover-foreground: #f8fafc;
-  --primary: #3b82f6;
+  --background: #141619;
+  --foreground: #e7e8e8;
+  --card: #1d2023;
+  --card-foreground: #e7e8e8;
+  --popover: #1d2023;
+  --popover-foreground: #e7e8e8;
+  --primary: #c97e42;
   --primary-foreground: #ffffff;
-  --secondary: #1e293b;
-  --secondary-foreground: #f8fafc;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #10b981;
+  --secondary: #2a2d31;
+  --secondary-foreground: #e7e8e8;
+  --muted: #2a2d31;
+  --muted-foreground: #9aa1a8;
+  --accent: #3a9164;
   --accent-foreground: #ffffff;
-  --destructive: #ef4444;
-  --destructive-foreground: #f8fafc;
-  --border: #1e293b;
-  --input: #334155;
-  --ring: #3b82f6;
+  --destructive: #d75f5f;
+  --destructive-foreground: #ffffff;
+  --success: #3a9164;
+  --warning: #d69a33;
+  --danger: #d75f5f;
+  --border: #2c3034;
+  --input: #3a3f44;
+  --ring: #c97e42;
 }
 
 @theme inline {
@@ -62,6 +68,9 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -143,23 +152,23 @@ button,
 
 @keyframes pulse-border {
   0%, 100% {
-    border-color: rgba(239, 68, 68, 0.4);
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    border-color: rgba(197, 74, 74, 0.4);
+    box-shadow: 0 0 0 0 rgba(197, 74, 74, 0);
   }
   50% {
-    border-color: rgba(239, 68, 68, 1);
-    box-shadow: 0 0 8px 2px rgba(239, 68, 68, 0.25);
+    border-color: rgba(197, 74, 74, 1);
+    box-shadow: 0 0 8px 2px rgba(197, 74, 74, 0.25);
   }
 }
 
 @keyframes pulse-border-glow {
   0%, 100% {
-    border-color: rgba(239, 68, 68, 0.3);
-    box-shadow: 0 0 4px 1px rgba(239, 68, 68, 0.1);
+    border-color: rgba(197, 74, 74, 0.3);
+    box-shadow: 0 0 4px 1px rgba(197, 74, 74, 0.1);
   }
   50% {
-    border-color: rgba(239, 68, 68, 0.85);
-    box-shadow: 0 0 10px 3px rgba(239, 68, 68, 0.3);
+    border-color: rgba(197, 74, 74, 0.85);
+    box-shadow: 0 0 10px 3px rgba(197, 74, 74, 0.3);
   }
 }
 
@@ -171,12 +180,12 @@ button,
   border-width: 1.5px;
   border-style: solid;
   animation: pulse-border 2.5s ease-in-out infinite;
-  border-color: rgba(239, 68, 68, 0.85);
+  border-color: rgba(197, 74, 74, 0.85);
 }
 
 .due-date-badge.expired {
-  border-color: rgba(239, 68, 68, 1);
-  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(197, 74, 74, 1);
+  background: rgba(197, 74, 74, 0.08);
   animation: pulse-border-glow 2s ease-in-out infinite;
 }
 

@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Building2,
-  Gavel,
   ArrowUpRight,
   Settings,
   Star,
@@ -43,6 +42,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { TenderDetailView } from "@/components/tender-detail-view";
 
 interface Tender {
@@ -250,15 +250,15 @@ export default function Home() {
       {/* Top Marketing & Announcement Bar */}
       <div className="h-9 w-full bg-slate-900 dark:bg-slate-950 text-slate-100 flex items-center justify-between px-[2%] text-xs font-medium border-b border-slate-800 z-[60] fixed top-0">
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-semibold border border-blue-500/30">
-            <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+          <span className="flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-primary/15 text-primary font-semibold border border-primary/30">
+            <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
             ENTERPRISE HUB
           </span>
           <span className="hidden sm:inline text-slate-300">EPC, Turnkey & PSU Infrastructure Tenders</span>
         </div>
         <div className="flex items-center gap-4">
           <a href="tel:+919661221326" className="flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors">
-            <Phone className="h-3.5 w-3.5 text-blue-400" />
+            <Phone className="h-3.5 w-3.5 text-primary" />
             <span className="hidden md:inline font-semibold">Contact:</span> +91 9661221326
           </a>
         </div>
@@ -276,9 +276,7 @@ export default function Home() {
           </button>
 
           <Link href="/" className="flex items-center gap-3 flex-shrink-0 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 shadow-md shadow-blue-500/20 group-hover:scale-105 transition-all">
-              <Gavel className="h-5 w-5 text-white" />
-            </div>
+            <Image src="/icons/icon-192.png" alt="GovTender Pro" width={40} height={40} className="h-10 w-10 rounded-xl object-cover shadow-md shadow-[#b86b35]/30 group-hover:scale-105 transition-all" />
             <div className="flex flex-col">
               <span className="text-lg font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
                 GovTender <span className="text-xs px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-bold uppercase tracking-wider">Pro</span>
@@ -393,9 +391,7 @@ export default function Home() {
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-700 to-indigo-600">
-              <Gavel className="h-4 w-4 text-white" />
-            </div>
+            <Image src="/icons/icon-192.png" alt="GovTender Pro" width={32} height={32} className="h-8 w-8 rounded-lg object-cover" />
             <span className="text-sm font-extrabold tracking-tight text-foreground">GovTender <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-bold uppercase tracking-wider">Pro</span></span>
           </div>
           <button
@@ -684,7 +680,7 @@ export default function Home() {
                             {tender.internalId}
                           </span>
                           {relDue.overdue && (
-                            <span className="hidden sm:inline-block px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400">
+                            <span className="hidden sm:inline-block px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border border-danger/40 bg-danger/10 text-danger">
                               {relDue.label}
                             </span>
                           )}
@@ -694,17 +690,17 @@ export default function Home() {
                             Due: <span className="font-bold text-foreground">{formatDate(tender.dueDate)}</span>
                           </span>
                           {status === "closing" && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border border-warning/40 bg-warning/10 text-warning">
                               CLOSING SOON
                             </span>
                           )}
                           {status === "live" && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border bg-success/10 text-success border-success/20">
                               LIVE
                             </span>
                           )}
                           {status === "expired" && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider border border-danger/40 bg-danger/10 text-danger">
                               EXPIRED
                             </span>
                           )}
@@ -794,15 +790,16 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
             <div className="space-y-3">
               <Link href="/" className="flex items-center gap-2 group">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 shadow-md shadow-blue-500/20">
-                  <Gavel className="h-5 w-5 text-white" />
-                </div>
+                <Image src="/icons/icon-192.png" alt="GovTender Pro" width={36} height={36} className="h-9 w-9 rounded-xl object-cover shadow-md shadow-[#b86b35]/30" />
                 <span className="text-base font-extrabold tracking-tight text-foreground">
                   GovTender <span className="text-xs px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-bold uppercase tracking-wider">Pro</span>
                 </span>
               </Link>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 Real-time Government Tender Management for EPC, Turnkey &amp; PSU Infrastructure projects. Find, track and win tenders with intelligent bidding intelligence.
+              </p>
+              <p className="text-sm font-semibold text-foreground/80 pt-1 border-t border-border/60">
+                GovTender Pro is a product of <span className="font-extrabold text-foreground">MASHREQ ENTERPRISES</span>
               </p>
             </div>
 
@@ -838,7 +835,7 @@ export default function Home() {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Mail className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                  <a href="mailto:info@govtenderhub.com" className="hover:text-primary transition-colors">info@govtenderhub.com</a>
+                  <a href="mailto:mashreqenterprises@gmail.com" className="hover:text-primary transition-colors">mashreqenterprises@gmail.com</a>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <MapPin className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
@@ -849,7 +846,7 @@ export default function Home() {
           </div>
         </div>
         <div className="border-t border-border py-5 px-[4%] md:px-[6%] flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-xs font-semibold text-muted-foreground">© 2026 GovTender Pro. All rights reserved.</p>
+          <p className="text-xs font-semibold text-muted-foreground">© 2026 GovTender Pro by MASHREQ ENTERPRISES. All rights reserved.</p>
           <p className="text-xs font-semibold text-muted-foreground">Real-time Government Tender Intelligence Platform</p>
         </div>
       </footer>

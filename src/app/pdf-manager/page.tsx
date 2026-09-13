@@ -321,7 +321,7 @@ function MergeView() {
         </div>
       )}
       {success && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-success/10 text-success text-sm">
           <Check className="h-4 w-4 flex-shrink-0" />
           <span>Merged PDF downloaded successfully!</span>
         </div>
@@ -415,8 +415,8 @@ function MergeView() {
           <div className="border border-border rounded-xl divide-y divide-border bg-card overflow-hidden">
             {displayFiles.map((file) => (
               <div key={file.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
-                <div className="h-8 w-8 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
-                  <File className="h-4 w-4 text-red-500" />
+                <div className="h-8 w-8 rounded-lg bg-danger/10 flex items-center justify-center flex-shrink-0">
+                  <File className="h-4 w-4 text-danger" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{file.name}</p>
@@ -648,7 +648,7 @@ const newBytes = await newDoc.save({ useObjectStreams: true });
         </div>
       )}
       {success && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-success/10 text-success text-sm">
           <Check className="h-4 w-4 flex-shrink-0" />
           <span>Downloaded successfully!</span>
         </div>
@@ -680,7 +680,7 @@ const newBytes = await newDoc.save({ useObjectStreams: true });
           {/* Loaded file info bar */}
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
             <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-red-500" />
+              <FileText className="h-5 w-5 text-danger" />
               <div>
                 <p className="text-sm font-medium">{pdfFile.name}</p>
                 <p className="text-xs text-muted-foreground">
@@ -893,7 +893,7 @@ function ArrangeView() {
         </div>
       )}
       {success && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-success/10 text-success text-sm">
           <Check className="h-4 w-4 flex-shrink-0" />
           <span>Arranged PDF downloaded successfully!</span>
         </div>
@@ -925,7 +925,7 @@ function ArrangeView() {
           {/* File info bar */}
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
             <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-red-500" />
+              <FileText className="h-5 w-5 text-danger" />
               <div>
                 <p className="text-sm font-medium">{pdfFile.name}</p>
                 <p className="text-xs text-muted-foreground">
@@ -977,7 +977,7 @@ function ArrangeView() {
                 <GripVertical className="absolute top-1 right-1.5 h-3 w-3 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
 
                 {/* Page icon + original page number */}
-                <FileText className="h-4 w-4 text-red-500 mt-2" />
+                <FileText className="h-4 w-4 text-danger mt-2" />
                 <span className="text-[10px] text-muted-foreground">
                   Pg {originalPageIndex + 1}
                 </span>
@@ -1179,7 +1179,7 @@ function CompressView() {
         </div>
       )}
       {success && result && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-success/10 text-success text-sm">
           <Check className="h-4 w-4 flex-shrink-0" />
           <span>Compressed PDF downloaded successfully!</span>
         </div>
@@ -1211,7 +1211,7 @@ function CompressView() {
         <>
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
             <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-red-500" />
+              <FileText className="h-5 w-5 text-danger" />
               <div>
                 <p className="text-sm font-medium">{pdfFile.name}</p>
                 <p className="text-xs text-muted-foreground">
@@ -1277,7 +1277,7 @@ function CompressView() {
             <div className="rounded-xl border border-border bg-card p-5 space-y-4">
               <div className="flex items-center gap-3">
                 <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
-                  savingsPct > 0 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground"
+                  savingsPct > 0 ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
                 }`}>
                   <FileDown className="h-5 w-5" />
                 </div>
@@ -1300,8 +1300,8 @@ function CompressView() {
                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Compressed</p>
                   <p className="text-sm font-bold mt-1">{formatSize(result.compressedSize)}</p>
                 </div>
-                <div className="p-3 rounded-lg bg-emerald-500/10">
-                  <p className="text-[10px] uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Saved</p>
+                <div className="p-3 rounded-lg bg-success/10">
+                  <p className="text-[10px] uppercase tracking-wide text-success">Saved</p>
                   <p className="text-sm font-bold mt-1">
                     {formatSize(Math.max(0, result.originalSize - result.compressedSize))}
                   </p>
