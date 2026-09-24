@@ -30,7 +30,6 @@ import {
   Download,
   Plus,
   ArrowLeft,
-  ChevronRight,
   Check,
   AlertCircle,
   File,
@@ -40,9 +39,9 @@ import {
   X,
   ArrowDownToLine,
   ShieldCheck,
-  FileDown,
   Minimize2,
   Eraser,
+  type LucideIcon,
 } from "lucide-react";
 
 /* -------------------------------------------------------------------------- */
@@ -56,6 +55,8 @@ interface PDFFile {
   size: number;
   pageCount: number;
   data: Uint8Array;
+  /** Blob URL of a one-page subset PDF (first page) used as a preview thumbnail */
+  thumbUrl?: string;
 }
 
 /** Operation tabs available in the PDF manager */
@@ -89,6 +90,22 @@ const uint8ToBlob = (data: Uint8Array, type: string): Blob =>
   new Blob([data.buffer as ArrayBuffer], { type });
 
 /**
+ * Build a lightweight one-page PDF containing only the first page of a larger
+ * PDF, then return a blob URL for it. Browsers render this natively inside
+ * <object> tags, giving a real first-page preview without any extra dependency.
+ */
+const makeThumbnail = async (data: Uint8Array): Promise<string> => {
+  const src = await PDFDocument.load(data, { ignoreEncryption: true });
+  const thumb = await PDFDocument.create();
+  if (src.getPageCount() > 0) {
+    const [page] = await thumb.copyPages(src, [0]);
+    thumb.addPage(page);
+  }
+  const bytes = await thumb.save({ useObjectStreams: true });
+  return URL.createObjectURL(uint8ToBlob(bytes, "application/pdf"));
+};
+
+/**
  * Trigger a browser download for a Blob. Only downloads — never auto-opens.
  * Uses a hidden <a> element with the `download` attribute set.
  */
@@ -105,6 +122,262 @@ const triggerDownload = (blob: Blob, filename: string) => {
 };
 
 /* -------------------------------------------------------------------------- */
+/*                           SHARED UI COMPONENTS                              */
+/* -------------------------------------------------------------------------- */
+
+/** Consistent success / error banner with a dismiss button. */
+function StatusBanner({ kind, children, onClose }: {
+  kind: "error" | "success";
+  children: React.ReactNode;
+  onClose?: () => void;
+}) {
+  const isError = kind === "error";
+  return (
+    <div className={`flex items-center gap-2 p-3 rounded-xl text-sm border ${
+      isError
+        ? "bg-destructive/10 text-destructive border-destructive/20"
+        : "bg-success/10 text-success border-success/20"
+    }`}>
+      {isError ? (
+        <AlertCircle className="h-4 w-4 flex-shrink-0" />
+      ) : (
+        <Check className="h-4 w-4 flex-shrink-0" />
+      )}
+      <span>{children}</span>
+      {onClose && (
+        <button onClick={onClose} className="ml-auto cursor-pointer" aria-label="Dismiss">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Gradient hero header shown at the top of every tool with a privacy chip. */
+function ViewHero({ icon: Icon, title, subtitle }: {
+  icon: LucideIcon;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/[0.12] via-card to-card p-5 sm:p-6">
+      <div className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-primary/15 blur-3xl" />
+      <div className="relative flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="h-12 w-12 rounded-2xl bg-card border border-primary/20 text-primary flex items-center justify-center shadow-sm shrink-0">
+            <Icon className="h-6 w-6" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="font-semibold sm:text-lg leading-tight">{title}</h2>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{subtitle}</p>
+          </div>
+        </div>
+        <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/10 text-success text-[11px] font-medium border border-success/20 flex-shrink-0">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          100% in-browser
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Unified drag-&-drop upload zone. Owns its file input (or uses the one you
+ * pass in via `inputRef`), handles drag-state highlighting and keyboard access.
+ */
+function DropZone({ onFiles, multiple = false, title, subtitle, inputRef }: {
+  onFiles: (files: File[]) => void;
+  multiple?: boolean;
+  title?: string;
+  subtitle?: React.ReactNode;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+}) {
+  const internalRef = useRef<HTMLInputElement>(null);
+  const ref = inputRef ?? internalRef;
+  const dragCounter = useRef(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const pick = (list: FileList | null) => {
+    if (list && list.length > 0) onFiles(Array.from(list));
+  };
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => ref.current?.click()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          ref.current?.click();
+        }
+      }}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current++;
+        setIsDragging(true);
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current--;
+        if (dragCounter.current <= 0) {
+          dragCounter.current = 0;
+          setIsDragging(false);
+        }
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current = 0;
+        setIsDragging(false);
+        pick(e.dataTransfer.files);
+      }}
+      className={`relative flex flex-col items-center justify-center gap-3 p-10 sm:p-14 min-h-[220px] rounded-2xl border-2 border-dashed text-center transition-all cursor-pointer outline-none ${
+        isDragging
+          ? "border-primary bg-primary/5 scale-[1.01]"
+          : "border-border hover:border-primary/50 hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring"
+      }`}
+    >
+      <div className={`h-14 w-14 rounded-2xl flex items-center justify-center transition-all ${
+        isDragging ? "bg-primary/15 text-primary scale-110" : "bg-card text-primary border border-border shadow-sm"
+      }`}>
+        <Upload className="h-6 w-6" />
+      </div>
+      <div>
+        <p className="text-sm font-semibold">
+          {isDragging ? "Drop it here" : (title ?? "Drag & drop PDF files here")}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {subtitle ?? (
+            <>
+              <span className="text-primary font-medium underline underline-offset-2">Click to browse</span>{" "}
+              or drop — files never leave this device
+            </>
+          )}
+        </p>
+      </div>
+      <input
+        ref={ref}
+        type="file"
+        accept=".pdf,application/pdf"
+        multiple={multiple}
+        onChange={(e) => pick(e.target.files)}
+        className="hidden"
+      />
+    </div>
+  );
+}
+
+/** Card showing the currently loaded file + optional actions. */
+function FileInfoBar({ file, actions }: {
+  file: PDFFile;
+  actions?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 p-3 sm:p-4 rounded-2xl border border-border bg-card shadow-sm">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/15 shrink-0">
+          <FileText className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-medium truncate">{file.name}</p>
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+            <span>{file.pageCount} page{file.pageCount !== 1 ? "s" : ""}</span>
+            <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+            <span>{formatSize(file.size)}</span>
+          </p>
+        </div>
+      </div>
+      {actions && (
+        <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>
+      )}
+    </div>
+  );
+}
+
+/** Small secondary button used for toolbar actions (sort, clear, add…). */
+function SmallAction({ onClick, disabled, children }: {
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Primary call-to-action button with a built-in spinner state. */
+function PrimaryButton({ onClick, disabled, processing, icon: Icon = Download, children, progressText, className = "" }: {
+  onClick: () => void;
+  disabled?: boolean;
+  processing?: boolean;
+  icon?: LucideIcon;
+  children: React.ReactNode;
+  progressText?: string;
+  className?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled || processing}
+      className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/25 hover:brightness-110 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer ${className}`}
+    >
+      {processing ? (
+        <>
+          <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+          {progressText}
+        </>
+      ) : (
+        <>
+          <Icon className="h-4 w-4" />
+          {children}
+        </>
+      )}
+    </button>
+  );
+}
+
+/** Circular gauge showing how much a file was shrunk. */
+function SavingsRing({ percent }: { percent: number }) {
+  const r = 26;
+  const c = 2 * Math.PI * r;
+  const clamped = Math.min(100, Math.max(0, percent));
+  return (
+    <div className="relative h-16 w-16 shrink-0" aria-label={`${percent}% smaller`}>
+      <svg viewBox="0 0 64 64" className="h-16 w-16 -rotate-90">
+        <circle cx="32" cy="32" r={r} fill="none" strokeWidth="6" stroke="var(--muted)" />
+        <circle
+          cx="32"
+          cy="32"
+          r={r}
+          fill="none"
+          strokeWidth="6"
+          strokeLinecap="round"
+          stroke="var(--success)"
+          strokeDasharray={`${(clamped / 100) * c} ${c}`}
+          className="transition-all duration-500"
+        />
+      </svg>
+      <div className="absolute inset-0 grid place-items-center text-xs font-bold text-success">
+        {percent}%
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /*                                MAIN PAGE                                  */
 /* -------------------------------------------------------------------------- */
 
@@ -114,28 +387,32 @@ export default function PDFManagerPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* ---- Top navigation bar with back link and operation tabs ---- */}
-      <header className="sticky top-0 z-50 border-b border-border bg-card/90 backdrop-blur-xl">
+      {/* ---- Top navigation bar with back link, branding and operation tabs ---- */}
+      <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-14">
-            {/* Left: back button + title */}
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3 h-16">
+            {/* Left: back link + brand */}
+            <div className="flex items-center gap-2.5 min-w-0">
               <Link
                 href="/"
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Back to home"
+                className="flex items-center gap-1 rounded-lg px-1.5 py-1 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Home</span>
               </Link>
-              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
-              <div className="flex items-center gap-2">
-                <FileText className="h-4.5 w-4.5 text-primary" />
-                <span className="font-semibold text-sm">PDF Manager</span>
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground flex items-center justify-center shadow-md shadow-primary/30 shrink-0">
+                <FileText className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-bold text-sm leading-tight">PDF Manager</p>
+                <p className="text-[10px] text-muted-foreground leading-tight truncate">
+                  Merge · Split · Arrange · Compress
+                </p>
               </div>
             </div>
 
             {/* Right: operation tabs */}
-            <nav className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5 overflow-x-auto">
+            <nav className="flex items-center gap-0.5 bg-muted/60 border border-border rounded-xl p-1 overflow-x-auto">
               {([
                 { id: "merge" as Operation, label: "Merge", icon: Merge },
                 { id: "split" as Operation, label: "Split", icon: SplitSquareVertical },
@@ -145,14 +422,15 @@ export default function PDFManagerPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+                  aria-current={activeTab === tab.id ? "page" : undefined}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                     activeTab === tab.id
-                      ? "bg-card text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   }`}
                 >
                   <tab.icon className="h-3.5 w-3.5" />
-                  {tab.label}
+                  <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               ))}
             </nav>
@@ -162,15 +440,6 @@ export default function PDFManagerPage() {
 
       {/* ---- Render the active operation view ---- */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-5">
-        {/* Privacy banner — all operations run in the browser */}
-        <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-primary/5 border border-primary/15 text-xs text-muted-foreground">
-          <ShieldCheck className="h-4 w-4 text-primary flex-shrink-0" />
-          <span>
-            100% private & in-browser. Your PDFs are never uploaded — every operation runs
-            locally on your device and nothing ever leaves your machine.
-          </span>
-        </div>
-
         {activeTab === "merge" && <MergeView />}
         {activeTab === "split" && <SplitView />}
         {activeTab === "arrange" && <ArrangeView />}
@@ -201,8 +470,6 @@ function MergeView() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const dragCounter = useRef(0);
-  const [isDragging, setIsDragging] = useState(false);
 
   /** Load PDF files and extract metadata (page count, name, size) */
   const loadFiles = useCallback(async (fileList: FileList | File[]) => {
@@ -225,6 +492,7 @@ function MergeView() {
           size: file.size,
           pageCount: pdfDoc.getPageCount(),
           data,
+          thumbUrl: await makeThumbnail(data),
         });
       } catch {
         setError(`Failed to read "${file.name}". It may be corrupted.`);
@@ -234,38 +502,31 @@ function MergeView() {
     setFiles((prev) => [...prev, ...newFiles]);
   }, []);
 
-  /** Handle drag-and-drop events on the drop zone */
-  const handleDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCounter.current++;
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCounter.current--;
-    if (dragCounter.current === 0) setIsDragging(false);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCounter.current = 0;
-    setIsDragging(false);
-    if (e.dataTransfer.files.length > 0) loadFiles(e.dataTransfer.files);
-  };
-
   /** Remove a file from the list by its ID */
   const removeFile = (id: string) => {
-    setFiles((prev) => prev.filter((f) => f.id !== id));
+    setFiles((prev) => {
+      const target = prev.find((f) => f.id === id);
+      if (target?.thumbUrl) URL.revokeObjectURL(target.thumbUrl);
+      return prev.filter((f) => f.id !== id);
+    });
   };
+
+  /** Free all remaining thumbnail URLs (used by Clear All and on unmount) */
+  const clearAll = () => {
+    setFiles((prev) => {
+      prev.forEach((f) => f.thumbUrl && URL.revokeObjectURL(f.thumbUrl));
+      return [];
+    });
+  };
+
+  // Revoke any leftover thumbnails when the view unmounts
+  const filesRef = useRef<PDFFile[]>([]);
+  filesRef.current = files;
+  useEffect(() => {
+    return () => {
+      filesRef.current.forEach((f) => f.thumbUrl && URL.revokeObjectURL(f.thumbUrl));
+    };
+  }, []);
 
   /** Get the display list — either sorted or in original order */
   const displayFiles = (() => {
@@ -277,6 +538,33 @@ function MergeView() {
   /** Toggle between A-Z, Z-A, and original order */
   const cycleSort = () => {
     setSortOrder((prev) => (prev === "none" ? "asc" : prev === "asc" ? "desc" : "none"));
+    setDragFileIndex(null);
+    setDragOverFileIndex(null);
+  };
+
+  /** Drag-reorder the file list (only in original order) */
+  const [dragFileIndex, setDragFileIndex] = useState<number | null>(null);
+  const [dragOverFileIndex, setDragOverFileIndex] = useState<number | null>(null);
+
+  const handleFileDragStart = (index: number) => {
+    if (sortOrder !== "none") return;
+    setDragFileIndex(index);
+  };
+  const handleFileDragEnter = (index: number) => {
+    if (dragFileIndex === null || sortOrder !== "none") return;
+    setDragOverFileIndex(index);
+  };
+  const handleFileDragEnd = () => {
+    if (dragFileIndex !== null && dragOverFileIndex !== null && dragFileIndex !== dragOverFileIndex && sortOrder === "none") {
+      setFiles((prev) => {
+        const next = [...prev];
+        const [moved] = next.splice(dragFileIndex, 1);
+        next.splice(dragOverFileIndex, 0, moved);
+        return next;
+      });
+    }
+    setDragFileIndex(null);
+    setDragOverFileIndex(null);
   };
 
   /** Merge all loaded PDFs into a single file and trigger download */
@@ -310,97 +598,60 @@ function MergeView() {
 
   return (
     <div className="space-y-5">
+      <ViewHero
+        icon={Merge}
+        title="Merge PDFs"
+        subtitle="Combine multiple PDF files into a single document. Drag files to set the exact merge order."
+      />
+
       {/* Status messages */}
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-          <AlertCircle className="h-4 w-4 flex-shrink-0" />
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="ml-auto cursor-pointer">
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <StatusBanner kind="error" onClose={() => setError(null)}>{error}</StatusBanner>
       )}
       {success && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-success/10 text-success text-sm">
-          <Check className="h-4 w-4 flex-shrink-0" />
-          <span>Merged PDF downloaded successfully!</span>
-        </div>
+        <StatusBanner kind="success">Merged PDF downloaded successfully!</StatusBanner>
       )}
 
       {/* Drop zone */}
-      <div
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-        className={`relative flex flex-col items-center justify-center gap-3 p-10 sm:p-14 min-h-[220px] rounded-xl border-2 border-dashed transition-all cursor-pointer bg-gradient-to-b from-primary/[0.03] to-muted/20 ${
-          isDragging
-            ? "border-primary bg-primary/5 scale-[1.01]"
-            : "border-border hover:border-primary/50 hover:bg-muted/30"
-        }`}
-      >
-        <div className={`h-14 w-14 rounded-2xl flex items-center justify-center transition-all ${
-          isDragging ? "bg-primary/15 text-primary scale-110" : "bg-card text-primary border border-border shadow-sm"
-        }`}>
-          <Upload className="h-6 w-6" />
-        </div>
-        <div className="text-center">
-          <p className="text-sm font-semibold">
-            {isDragging ? "Drop PDF files here" : "Drag & drop PDF files here"}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            or <span className="text-primary font-medium underline underline-offset-2">click to browse</span> — files stay on your device
-          </p>
-        </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf,application/pdf"
-          multiple
-          onChange={(e) => e.target.files && loadFiles(e.target.files)}
-          className="hidden"
-        />
-      </div>
+      <DropZone
+        inputRef={fileInputRef}
+        multiple
+        onFiles={loadFiles}
+        title="Drag & drop PDF files here"
+      />
 
       {/* File list + merge controls */}
       {files.length > 0 && (
         <>
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold">{files.length} file{files.length !== 1 ? "s" : ""}</span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20">
+                <FileText className="h-3 w-3" />
+                {files.length} file{files.length !== 1 ? "s" : ""}
+              </span>
               <span className="text-xs text-muted-foreground">
-                · {files.reduce((acc, f) => acc + f.pageCount, 0)} pages ·{" "}
+                {files.reduce((acc, f) => acc + f.pageCount, 0)} pages ·{" "}
                 {formatSize(files.reduce((acc, f) => acc + f.size, 0))}
               </span>
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Clear all */}
-              <button
-                onClick={() => setFiles([])}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors cursor-pointer"
-              >
+              <SmallAction onClick={clearAll}>
                 <Eraser className="h-3 w-3" />
                 <span className="hidden sm:inline">Clear All</span>
-              </button>
+              </SmallAction>
 
-              {/* Sort toggle button */}
-              <button
-                onClick={cycleSort}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-muted transition-colors cursor-pointer"
-              >
-                <ArrowUpDown className="h-3 w-3" />
-                {sortOrder === "none" && "Sort"}
-                {sortOrder === "asc" && (
-                  <><ArrowDown className="h-3 w-3" /> A-Z</>
+              <SmallAction onClick={cycleSort}>
+                {sortOrder === "asc" ? (
+                  <ArrowDown className="h-3 w-3" />
+                ) : sortOrder === "desc" ? (
+                  <ArrowUp className="h-3 w-3" />
+                ) : (
+                  <ArrowUpDown className="h-3 w-3" />
                 )}
-                {sortOrder === "desc" && (
-                  <><ArrowUp className="h-3 w-3" /> Z-A</>
-                )}
-              </button>
+                {sortOrder === "asc" ? "A-Z" : sortOrder === "desc" ? "Z-A" : "Sort"}
+              </SmallAction>
 
-              {/* Add more files button */}
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer"
@@ -411,52 +662,101 @@ function MergeView() {
             </div>
           </div>
 
-          {/* Scrollable file list */}
-          <div className="border border-border rounded-xl divide-y divide-border bg-card overflow-hidden">
-            {displayFiles.map((file) => (
-              <div key={file.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
-                <div className="h-8 w-8 rounded-lg bg-danger/10 flex items-center justify-center flex-shrink-0">
-                  <File className="h-4 w-4 text-danger" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{file.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {file.pageCount} page{file.pageCount !== 1 ? "s" : ""} · {formatSize(file.size)}
-                  </p>
-                </div>
-                <button
-                  onClick={() => removeFile(file.id)}
-                  aria-label={`Remove ${file.name}`}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+          {/* Preview grid — drag to reorder merge order */}
+          <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
+            <div className="flex items-center justify-between px-1 pb-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Merge order
+              </p>
+              {sortOrder !== "none" && (
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                  <GripVertical className="h-3 w-3" />
+                  Sorting by name — set Sort to Off to drag files into position
+                </p>
+              )}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {displayFiles.map((file, index) => (
+                <div
+                  key={file.id}
+                  draggable={sortOrder === "none"}
+                  onDragStart={() => handleFileDragStart(index)}
+                  onDragEnter={() => handleFileDragEnter(index)}
+                  onDragEnd={handleFileDragEnd}
+                  onDragOver={(e) => e.preventDefault()}
+                  title={sortOrder === "none" ? "Drag to reorder" : undefined}
+                  className={`group relative rounded-xl border bg-card shadow-sm transition-all ${
+                    dragFileIndex === index
+                      ? "border-primary bg-primary/5 opacity-60 scale-[0.98]"
+                      : dragOverFileIndex === index
+                      ? "border-primary border-dashed bg-primary/5"
+                      : "border-border hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5"
+                  } ${sortOrder === "none" ? "cursor-grab active:cursor-grabbing" : ""}`}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
+                  {/* Position badge (merge order) */}
+                  <span className="absolute top-2 left-2 z-10 h-5 w-5 flex items-center justify-center rounded-md bg-card/90 text-[10px] font-bold text-primary border border-primary/20 shadow-sm">
+                    {index + 1}
+                  </span>
+
+                  {/* Drag handle */}
+                  {sortOrder === "none" && (
+                    <GripVertical className="absolute top-2 right-2 z-10 h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                  )}
+
+                  {/* Remove */}
+                  <button
+                    onClick={() => removeFile(file.id)}
+                    aria-label={`Remove ${file.name}`}
+                    className="absolute -top-1.5 -right-1.5 z-20 h-6 w-6 rounded-full grid place-items-center bg-danger text-white shadow-md hover:brightness-110 transition-all cursor-pointer"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+
+                  {/* First-page preview */}
+                  <div className="h-44 rounded-t-xl overflow-hidden bg-muted/30 border-b border-border">
+                    {file.thumbUrl ? (
+                      <object
+                        data={file.thumbUrl}
+                        type="application/pdf"
+                        className="w-full h-full pointer-events-none select-none"
+                        aria-label={`${file.name} first page preview`}
+                      >
+                        <div className="flex items-center justify-center h-full text-muted-foreground">
+                          <File className="h-5 w-5" />
+                        </div>
+                      </object>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-muted-foreground">
+                        <File className="h-5 w-5" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Name + meta */}
+                  <div className="p-2.5">
+                    <p className="text-xs font-medium truncate" title={file.name}>{file.name}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {file.pageCount} page{file.pageCount !== 1 ? "s" : ""} · {formatSize(file.size)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Merge action bar */}
-          <div className="flex items-center justify-between gap-3 p-4 rounded-xl bg-muted/30 border border-border">
+          <div className="flex items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-primary/10 via-muted/40 to-transparent border border-primary/15">
             <p className="text-xs text-muted-foreground hidden sm:block">
-              Files are combined in the order shown above.
+              Drag files to arrange the order — files are merged top-left first.
             </p>
-            <button
+            <PrimaryButton
               onClick={handleMerge}
-              disabled={files.length < 2 || processing}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/20 hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+              disabled={files.length < 2}
+              processing={processing}
+              progressText="Merging..."
             >
-              {processing ? (
-                <>
-                  <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                  Merging...
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4" />
-                  Merge {files.length} Files
-                </>
-              )}
-            </button>
+              Merge {files.length} Files
+            </PrimaryButton>
           </div>
         </>
       )}
@@ -483,7 +783,6 @@ function SplitView() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   /** Load a single PDF file for splitting */
   const handleFileLoad = useCallback(async (file: File) => {
@@ -638,129 +937,97 @@ const newBytes = await newDoc.save({ useObjectStreams: true });
 
   return (
     <div className="space-y-5">
+      <ViewHero
+        icon={SplitSquareVertical}
+        title="Split PDF"
+        subtitle="Extract pages from a PDF. One contiguous range downloads as a single PDF; multiple ranges are bundled into a ZIP."
+      />
+
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-          <AlertCircle className="h-4 w-4 flex-shrink-0" />
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="ml-auto cursor-pointer">
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <StatusBanner kind="error" onClose={() => setError(null)}>{error}</StatusBanner>
       )}
       {success && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-success/10 text-success text-sm">
-          <Check className="h-4 w-4 flex-shrink-0" />
-          <span>Downloaded successfully!</span>
-        </div>
+        <StatusBanner kind="success">Downloaded successfully!</StatusBanner>
       )}
 
       {/* Upload zone — shown when no file is loaded */}
       {!pdfFile ? (
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="flex flex-col items-center justify-center gap-3 p-10 sm:p-14 min-h-[220px] rounded-xl border-2 border-dashed bg-gradient-to-b from-primary/[0.03] to-muted/20 border-border hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer"
-        >
-          <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
-            <Upload className="h-5.5 w-5.5" />
-          </div>
-          <div className="text-center">
-            <p className="text-sm font-medium">Drop or click to select a PDF</p>
-            <p className="text-xs text-muted-foreground mt-1">Only one file for splitting</p>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,application/pdf"
-            onChange={(e) => e.target.files?.[0] && handleFileLoad(e.target.files[0])}
-            className="hidden"
-          />
-        </div>
+        <DropZone
+          onFiles={(files) => files[0] && handleFileLoad(files[0])}
+          title="Drop or click to select a PDF"
+          subtitle="One file at a time — then pick the pages to keep"
+        />
       ) : (
         <>
           {/* Loaded file info bar */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
-            <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-danger" />
-              <div>
-                <p className="text-sm font-medium">{pdfFile.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {pdfFile.pageCount} pages · {formatSize(pdfFile.size)}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
+          <FileInfoBar
+            file={pdfFile}
+            actions={
               <button
                 onClick={() => { setPdfFile(null); setSelectedPages(new Set()); setRangeInput(""); }}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 Replace
               </button>
+            }
+          />
+
+          {/* Range input for quick page selection */}
+          <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex items-center gap-2 flex-1">
+                <input
+                  type="text"
+                  value={rangeInput}
+                  onChange={(e) => setRangeInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && applyRange()}
+                  placeholder="e.g. 1-3,5,8-10"
+                  className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <SmallAction onClick={applyRange}>Apply</SmallAction>
+                <SmallAction onClick={selectAll}>All</SmallAction>
+              </div>
+              <p className="text-[11px] text-muted-foreground sm:text-right">
+                {selectedPages.size} of {pdfFile.pageCount} pages selected
+              </p>
+            </div>
+
+            {/* Page grid — clickable page boxes */}
+            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2 mt-3">
+              {Array.from({ length: pdfFile.pageCount }, (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => togglePage(i)}
+                  aria-pressed={selectedPages.has(i)}
+                  className={`relative flex flex-col items-center justify-center p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                    selectedPages.has(i)
+                      ? "border-primary bg-primary/10 text-primary shadow-sm"
+                      : "border-border hover:border-primary/30 bg-background text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {selectedPages.has(i) && (
+                    <span className="absolute -top-1.5 -right-1.5 z-10 h-4 w-4 rounded-full bg-primary text-primary-foreground grid place-items-center">
+                      <Check className="h-2.5 w-2.5" />
+                    </span>
+                  )}
+                  <FileText className="h-3.5 w-3.5 mb-1" />
+                  {i + 1}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Range input for quick page selection */}
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={rangeInput}
-              onChange={(e) => setRangeInput(e.target.value)}
-              placeholder="e.g. 1-3,5,8-10"
-              className="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <button
-              onClick={applyRange}
-              className="px-3 py-2 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
-            >
-              Apply
-            </button>
-            <button
-              onClick={selectAll}
-              className="px-3 py-2 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
-            >
-              All
-            </button>
-          </div>
-
-          {/* Page grid — clickable page boxes */}
-          <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
-            {Array.from({ length: pdfFile.pageCount }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => togglePage(i)}
-                className={`flex flex-col items-center justify-center p-2 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
-                  selectedPages.has(i)
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border hover:border-primary/30 text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <FileText className="h-3.5 w-3.5 mb-1" />
-                {i + 1}
-              </button>
-            ))}
-          </div>
-
-          {/* Selected count + download button */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">
-              {selectedPages.size} of {pdfFile.pageCount} pages selected
-            </span>
-            <button
+          {/* Download button */}
+          <div className="flex justify-end">
+            <PrimaryButton
               onClick={handleSplit}
-              disabled={selectedPages.size === 0 || processing}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/20 hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+              disabled={selectedPages.size === 0}
+              processing={processing}
+              progressText="Splitting..."
+              icon={ArrowDownToLine}
             >
-              {processing ? (
-                <>
-                  <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                  Splitting...
-                </>
-              ) : (
-                <>
-                  <ArrowDownToLine className="h-4 w-4" />
-                  Download {selectedPages.size} Page{selectedPages.size !== 1 ? "s" : ""}
-                </>
-              )}
-            </button>
+              Download {selectedPages.size} Page{selectedPages.size !== 1 ? "s" : ""}
+            </PrimaryButton>
           </div>
         </>
       )}
@@ -786,7 +1053,6 @@ function ArrangeView() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   /** Load a PDF and initialize page order array [0, 1, 2, ...] */
   const handleFileLoad = useCallback(async (file: File) => {
@@ -883,75 +1149,55 @@ function ArrangeView() {
 
   return (
     <div className="space-y-5">
+      <ViewHero
+        icon={MoveVertical}
+        title="Arrange Pages"
+        subtitle="Reorder pages within a PDF with drag-and-drop, or use the arrow buttons for precise control."
+      />
+
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-          <AlertCircle className="h-4 w-4 flex-shrink-0" />
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="ml-auto cursor-pointer">
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <StatusBanner kind="error" onClose={() => setError(null)}>{error}</StatusBanner>
       )}
       {success && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-success/10 text-success text-sm">
-          <Check className="h-4 w-4 flex-shrink-0" />
-          <span>Arranged PDF downloaded successfully!</span>
-        </div>
+        <StatusBanner kind="success">Arranged PDF downloaded successfully!</StatusBanner>
       )}
 
       {/* Upload zone — shown when no file is loaded */}
       {!pdfFile ? (
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="flex flex-col items-center justify-center gap-3 p-10 sm:p-14 min-h-[220px] rounded-xl border-2 border-dashed bg-gradient-to-b from-primary/[0.03] to-muted/20 border-border hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer"
-        >
-          <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
-            <Upload className="h-5.5 w-5.5" />
-          </div>
-          <div className="text-center">
-            <p className="text-sm font-medium">Drop or click to select a PDF</p>
-            <p className="text-xs text-muted-foreground mt-1">Reorder pages via drag-and-drop</p>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,application/pdf"
-            onChange={(e) => e.target.files?.[0] && handleFileLoad(e.target.files[0])}
-            className="hidden"
-          />
-        </div>
+        <DropZone
+          onFiles={(files) => files[0] && handleFileLoad(files[0])}
+          title="Drop or click to select a PDF"
+          subtitle="Then drag pages into your preferred order"
+        />
       ) : (
         <>
           {/* File info bar */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
-            <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-danger" />
-              <div>
-                <p className="text-sm font-medium">{pdfFile.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {pdfFile.pageCount} pages · {formatSize(pdfFile.size)}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={resetOrder}
-                disabled={isOriginalOrder}
-                className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-              >
-                Reset Order
-              </button>
-              <button
-                onClick={() => { setPdfFile(null); setPageOrder([]); }}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              >
-                Replace
-              </button>
-            </div>
-          </div>
+          <FileInfoBar
+            file={pdfFile}
+            actions={
+              <>
+                <SmallAction onClick={resetOrder} disabled={isOriginalOrder}>
+                  <ArrowDownToLine className="h-3 w-3 rotate-180" />
+                  Reset Order
+                </SmallAction>
+                <SmallAction onClick={() => { setPdfFile(null); setPageOrder([]); }}>
+                  Replace
+                </SmallAction>
+              </>
+            }
+          />
 
           {/* Compact draggable page grid */}
-          <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
+          <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
+            <div className="flex items-center justify-between px-1 pb-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Page order
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {pageOrder.length} page{pageOrder.length !== 1 ? "s" : ""} · drag to reorder
+              </p>
+            </div>
+            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
             {pageOrder.map((originalPageIndex, currentIndex) => (
               <div
                 key={`${originalPageIndex}-${currentIndex}`}
@@ -965,7 +1211,7 @@ function ArrangeView() {
                     ? "border-primary bg-primary/5 opacity-60 scale-95"
                     : dragOverIndex === currentIndex
                     ? "border-primary border-dashed bg-primary/5"
-                    : "border-border hover:border-primary/30 bg-card hover:bg-muted/40"
+                    : "border-border hover:border-primary/30 bg-card hover:bg-muted/50 hover:shadow-sm"
                 }`}
               >
                 {/* New position number (top-left badge) */}
@@ -1002,26 +1248,21 @@ function ArrangeView() {
               </div>
             ))}
           </div>
+          </div>
 
           {/* Save button */}
-          <div className="flex justify-end">
-            <button
+          <div className="flex items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-primary/10 via-muted/40 to-transparent border border-primary/15">
+            <p className="text-xs text-muted-foreground hidden sm:block">
+              Drag pages anywhere — the badge shows each page&rsquo;s new position.
+            </p>
+            <PrimaryButton
               onClick={handleSave}
-              disabled={isOriginalOrder || processing}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/20 hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+              disabled={isOriginalOrder}
+              processing={processing}
+              progressText="Processing..."
             >
-              {processing ? (
-                <>
-                  <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4" />
-                  Download Arranged PDF
-                </>
-              )}
-            </button>
+              Download Arranged PDF
+            </PrimaryButton>
           </div>
         </>
       )}
@@ -1048,19 +1289,41 @@ function CompressView() {
   const [success, setSuccess] = useState(false);
   const [result, setResult] = useState<{ originalSize: number; compressedSize: number } | null>(null);
   const [settings, setSettings] = useState<"screen" | "ebook" | "printer">("ebook");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mode, setMode] = useState<"fast" | "deep">("fast");
   const workerRef = useRef<Worker | null>(null);
+  const [download, setDownload] = useState<{ blob: Blob; name: string } | null>(null);
 
   useEffect(() => {
     return () => {
       workerRef.current?.terminate();
+      workerRef.current = null;
     };
   }, []);
+
+  /** Lazily create the Ghostscript worker and keep it alive between runs so the
+   *  heavy WASM engine (16 MB) is only downloaded + compiled once per page load. */
+  const getWorker = useCallback(() => {
+    if (workerRef.current) return workerRef.current;
+    const worker = new Worker("/gs-compress.worker.js");
+    workerRef.current = worker;
+    return worker;
+  }, []);
+
+  /** Kick off a warm-up request as soon as the view mounts so the engine is
+   *  already downloaded + compiled by the time the user hits "Compress PDF". */
+  useEffect(() => {
+    try {
+      getWorker().postMessage({ type: "warmup", id: -1 });
+    } catch {
+      /* non-blocking */
+    }
+  }, [getWorker]);
 
   const handleFileLoad = useCallback(async (file: File) => {
     setError(null);
     setSuccess(false);
     setResult(null);
+    setDownload(null);
 
     if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
       setError("Only PDF files are accepted.");
@@ -1082,85 +1345,110 @@ function CompressView() {
     }
   }, []);
 
-  const handleCompress = useCallback(() => {
+  /** Run the Ghostscript engine in the worker and resolve with the compressed
+   *  bytes. The engine instance is cached in the worker, so only the PDF
+   *  processing happens per call. */
+  const runDeep = useCallback(() => {
+    if (!pdfFile) throw new Error("No file selected");
+    const id = Math.floor(Math.random() * 1e9);
+    let worker: Worker;
+    try {
+      worker = getWorker();
+    } catch {
+      throw new Error("Compression engine is not available in this browser.");
+    }
+
+    const buffer = pdfFile.data.buffer.slice(
+      pdfFile.data.byteOffset,
+      pdfFile.data.byteOffset + pdfFile.data.byteLength
+    ) as ArrayBuffer;
+
+    return new Promise<Uint8Array>((resolve, reject) => {
+      const onMessage = (e: MessageEvent) => {
+        const msg = e.data;
+        if (msg.id !== id) return;
+        if (msg.type === "progress") {
+          setProgress(msg.message);
+        } else if (msg.type === "result") {
+          worker.removeEventListener("message", onMessage);
+          worker.onerror = null;
+          resolve(new Uint8Array(msg.data));
+        } else if (msg.type === "error") {
+          worker.removeEventListener("message", onMessage);
+          worker.onerror = null;
+          worker.terminate();
+          workerRef.current = null;
+          reject(new Error(msg.message || "Failed to compress the PDF."));
+        }
+      };
+      const onError = () => {
+        worker.removeEventListener("message", onMessage);
+        worker.terminate();
+        workerRef.current = null;
+        reject(new Error("Compression engine failed to load. Please try again."));
+      };
+      worker.addEventListener("message", onMessage);
+      worker.onerror = onError;
+      worker.postMessage({ type: "compress", id, data: buffer, settings }, [buffer]);
+    });
+  }, [pdfFile, settings, getWorker]);
+
+  const handleCompress = useCallback(async () => {
     if (!pdfFile) return;
     setProcessing(true);
     setError(null);
     setSuccess(false);
     setResult(null);
-    setProgress("Preparing…");
 
-    const id = Date.now();
-
-    let worker: Worker;
-    try {
-      worker = new Worker("/gs-compress.worker.js");
-    } catch {
-      setError("Compression engine is not available in this browser.");
+    const showResult = (bytes: Uint8Array) => {
       setProcessing(false);
-      return;
-    }
-    workerRef.current?.terminate();
-    workerRef.current = worker;
-
-    worker.onmessage = (e: MessageEvent) => {
-      const msg = e.data;
-      if (msg.id !== id) return;
-
-      if (msg.type === "progress") {
-        setProgress(msg.message);
-      } else if (msg.type === "result") {
-        const bytes = new Uint8Array(msg.data);
-        const originalSize = pdfFile.size;
-        setProcessing(false);
-        setProgress(null);
-        setResult({ originalSize, compressedSize: bytes.length });
-
-        if (bytes.length < originalSize) {
-          const blob = uint8ToBlob(bytes, "application/pdf");
-          const baseName = pdfFile.name.replace(/\.pdf$/i, "");
-          triggerDownload(blob, `${baseName}_compressed.pdf`);
-          setSuccess(true);
-          setTimeout(() => setSuccess(false), 4000);
-        }
-
-        worker.terminate();
-        workerRef.current = null;
-      } else if (msg.type === "error") {
-        setProcessing(false);
-        setProgress(null);
-        setError(msg.message || "Failed to compress the PDF.");
-        worker.terminate();
-        workerRef.current = null;
+      setProgress(null);
+      setResult({ originalSize: pdfFile.size, compressedSize: bytes.length });
+      if (bytes.length < pdfFile.size) {
+        const baseName = pdfFile.name.replace(/\.pdf$/i, "");
+        const blob = uint8ToBlob(bytes, "application/pdf");
+        triggerDownload(blob, `${baseName}_compressed.pdf`);
+        setDownload({ blob, name: `${baseName}_compressed.pdf` });
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 4000);
       }
     };
 
-    worker.onerror = () => {
+    try {
+      if (mode === "deep") {
+        setProgress("Running Ghostscript…");
+        const bytes = await runDeep();
+        showResult(bytes);
+        return;
+      }
+
+      // Fast path: instant pdf-lib repack.
+      setProgress("Repacking…");
+      const doc = await PDFDocument.load(pdfFile.data, { ignoreEncryption: true });
+      const packed = await doc.save({ useObjectStreams: true });
+
+      // If the repack already shrank the file, we're done.
+      if (packed.length < pdfFile.size) {
+        showResult(packed);
+        return;
+      }
+
+      // Otherwise fall through to the real engine (preloaded on mount) which
+      // downsamples embedded images — this is where the actual savings come from.
+      setProgress("Running Ghostscript…");
+      const bytes = await runDeep();
+      showResult(bytes);
+      return;
+    } catch (err) {
       setProcessing(false);
       setProgress(null);
-      setError("Compression engine failed to load. Please try again.");
-      worker.terminate();
-      workerRef.current = null;
-    };
-
-    worker.postMessage(
-      {
-        type: "compress",
-        id,
-        data: pdfFile.data.buffer.slice(
-          pdfFile.data.byteOffset,
-          pdfFile.data.byteOffset + pdfFile.data.byteLength
-        ) as ArrayBuffer,
-        settings,
-      },
-      [
-        pdfFile.data.buffer.slice(
-          pdfFile.data.byteOffset,
-          pdfFile.data.byteOffset + pdfFile.data.byteLength
-        ) as ArrayBuffer,
-      ]
-    );
-  }, [pdfFile, settings]);
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : "Failed to compress the PDF. Please try again."
+      );
+    }
+  }, [pdfFile, mode, runDeep]);
 
   const savingsPct =
     result && result.originalSize > 0
@@ -1169,67 +1457,66 @@ function CompressView() {
 
   return (
     <div className="space-y-5">
+      <ViewHero
+        icon={Minimize2}
+        title="Compress PDF"
+        subtitle="Shrink file size without leaving your browser. Text stays selectable and image-heavy (scanned) files are downsampled."
+      />
+
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-          <AlertCircle className="h-4 w-4 flex-shrink-0" />
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="ml-auto cursor-pointer">
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <StatusBanner kind="error" onClose={() => setError(null)}>{error}</StatusBanner>
       )}
       {success && result && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-success/10 text-success text-sm">
-          <Check className="h-4 w-4 flex-shrink-0" />
-          <span>Compressed PDF downloaded successfully!</span>
-        </div>
+        <StatusBanner kind="success">Compressed PDF downloaded successfully!</StatusBanner>
       )}
 
       {!pdfFile ? (
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="flex flex-col items-center justify-center gap-3 p-10 sm:p-14 min-h-[220px] rounded-xl border-2 border-dashed bg-gradient-to-b from-primary/[0.03] to-muted/20 border-border hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer"
-        >
-          <div className="h-14 w-14 rounded-2xl flex items-center justify-center bg-card text-primary border border-border shadow-sm">
-            <Minimize2 className="h-6 w-6" />
-          </div>
-          <div className="text-center">
-            <p className="text-sm font-semibold">Drop or click to select a PDF</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Reduces file size by removing redundant data
-            </p>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,application/pdf"
-            onChange={(e) => e.target.files?.[0] && handleFileLoad(e.target.files[0])}
-            className="hidden"
-          />
-        </div>
+        <DropZone
+          onFiles={(files) => files[0] && handleFileLoad(files[0])}
+          title="Drop or click to select a PDF"
+          subtitle="Reduces file size by removing redundant data and downsampling images"
+        />
       ) : (
         <>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
-            <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-danger" />
-              <div>
-                <p className="text-sm font-medium">{pdfFile.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {pdfFile.pageCount} pages · {formatSize(pdfFile.size)}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
+          <FileInfoBar
+            file={pdfFile}
+            actions={
               <button
-                onClick={() => { setPdfFile(null); setResult(null); }}
+                onClick={() => { setPdfFile(null); setResult(null); setDownload(null); }}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 Replace
               </button>
+            }
+          />
+
+          <div className="rounded-2xl border border-border bg-card p-4 space-y-3 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Method
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { id: "fast" as const, label: "Fast", desc: "Instant, auto-upgrades" },
+                { id: "deep" as const, label: "Maximum", desc: "Ghostscript engine" },
+              ]).map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => setMode(opt.id)}
+                  aria-pressed={mode === opt.id}
+                  className={`flex flex-col items-center gap-0.5 p-2.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+                    mode === opt.id
+                      ? "border-primary bg-primary/10 text-primary shadow-sm"
+                      : "border-border bg-background hover:border-primary/30 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {opt.label}
+                  <span className="text-[10px] text-muted-foreground">{opt.desc}</span>
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <div className="rounded-2xl border border-border bg-card p-4 space-y-3 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Compression level
             </p>
@@ -1242,10 +1529,11 @@ function CompressView() {
                 <button
                   key={opt.id}
                   onClick={() => setSettings(opt.id)}
-                  className={`flex flex-col items-center gap-0.5 p-2.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                  aria-pressed={settings === opt.id}
+                  className={`flex flex-col items-center gap-0.5 p-2.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
                     settings === opt.id
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border hover:border-primary/30 text-muted-foreground hover:text-foreground"
+                      ? "border-primary bg-primary/10 text-primary shadow-sm"
+                      : "border-border bg-background hover:border-primary/30 text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {opt.label}
@@ -1255,77 +1543,67 @@ function CompressView() {
             </div>
           </div>
 
-          <button
+          <PrimaryButton
             onClick={handleCompress}
             disabled={processing}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/20 hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+            processing={processing}
+            progressText={progress ?? "Compressing..."}
+            icon={Minimize2}
+            className="w-full sm:w-auto"
           >
-            {processing ? (
-              <>
-                <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                {progress ?? "Compressing..."}
-              </>
-            ) : (
-              <>
-                <Minimize2 className="h-4 w-4" />
-                Compress PDF
-              </>
-            )}
-          </button>
+            Compress PDF
+          </PrimaryButton>
 
           {result && (
-            <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
-                  savingsPct > 0 ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
-                }`}>
-                  <FileDown className="h-5 w-5" />
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4 min-w-0">
+                  <SavingsRing percent={savingsPct} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">
+                      {savingsPct > 0 ? `${savingsPct}% smaller` : "No size reduction possible"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {savingsPct > 0
+                        ? "Your file was compressed — ready to download."
+                        : "This PDF is already well compressed."}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold">
-                    {savingsPct > 0 ? `${savingsPct}% smaller` : "No size reduction possible"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    This PDF is already well compressed.
-                  </p>
-                </div>
+                {savingsPct > 0 && download && (
+                  <PrimaryButton
+                    onClick={() => triggerDownload(download.blob, download.name)}
+                    className="flex-shrink-0"
+                  >
+                    Download
+                  </PrimaryButton>
+                )}
               </div>
 
               <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="p-3 rounded-lg bg-muted/40">
+                <div className="p-3 rounded-xl bg-muted/40">
                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Original</p>
                   <p className="text-sm font-bold mt-1">{formatSize(result.originalSize)}</p>
                 </div>
-                <div className="p-3 rounded-lg bg-muted/40">
+                <div className="p-3 rounded-xl bg-muted/40">
                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Compressed</p>
                   <p className="text-sm font-bold mt-1">{formatSize(result.compressedSize)}</p>
                 </div>
-                <div className="p-3 rounded-lg bg-success/10">
+                <div className="p-3 rounded-xl bg-success/10 border border-success/20">
                   <p className="text-[10px] uppercase tracking-wide text-success">Saved</p>
-                  <p className="text-sm font-bold mt-1">
+                  <p className="text-sm font-bold mt-1 text-success">
                     {formatSize(Math.max(0, result.originalSize - result.compressedSize))}
                   </p>
                 </div>
               </div>
-
-              {savingsPct > 0 && (
-                <button
-                  onClick={handleCompress}
-                  disabled={processing}
-                  className="w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-lg shadow-primary/20 hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
-                >
-                  <Download className="h-4 w-4" />
-                  Download Compressed PDF
-                </button>
-              )}
             </div>
           )}
 
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Compression runs locally in a background worker using a browser build of
-            Ghostscript — your PDF never leaves this device. Text stays selectable and
-            searchable, fonts are embedded, and image-heavy (scanned) files are
-            downsampled to shrink significantly.
+            <span className="font-semibold text-foreground">Fast</span> instantly re-packs the PDF; if the file cannot be
+            shrunk that way it automatically switches to the <span className="font-semibold text-foreground">Maximum</span> engine, which
+            runs a browser build of Ghostscript in the background — your PDF never leaves this device. Text stays
+            selectable and searchable, and image-heavy (scanned) files are downsampled to shrink significantly.
           </p>
         </>
       )}

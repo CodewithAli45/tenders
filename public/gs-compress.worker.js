@@ -9,18 +9,40 @@
 
 const modulePromise = import("/wasm/gs.js").then((m) => m.default);
 
+/** The compiled Ghostscript instance is cached and reused across runs, so the
+ *  heavy WASM module is only downloaded + compiled once per page load. */
+let gsInstance = null;
+
+const ensureEngine = async () => {
+  if (!gsInstance) {
+    const createGhostscript = await modulePromise;
+    gsInstance = await createGhostscript();
+  }
+  return gsInstance;
+};
+
 self.onmessage = async (event) => {
   const req = event.data;
-  if (!req || req.type !== "compress") return;
+  if (!req) return;
 
   const postResponse = (msg) => self.postMessage({ id: req.id, ...msg });
 
-  try {
-    const createGhostscript = await modulePromise;
-    const mod = await createGhostscript();
-    const FS = mod.FS;
+  // A warm-up request does nothing but compile the engine in the background so
+  // the first real compress is fast. Errors are ignored — real runs surface them.
+  if (req.type === "warmup") {
+    try {
+      await ensureEngine();
+    } catch {
+      /* ignore */
+    }
+    return;
+  }
 
-    postResponse({ type: "progress", message: "Loading Ghostscript engine..." });
+  if (req.type !== "compress") return;
+
+  try {
+    const mod = await ensureEngine();
+    const FS = mod.FS;
 
     try {
       FS.mkdir("/work");
