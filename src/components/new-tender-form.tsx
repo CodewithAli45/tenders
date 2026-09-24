@@ -31,6 +31,13 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
     contactPerson: "",
     contactPhone: "",
     contactEmail: "",
+    paymentTerms: "",
+    officerDesignation: "",
+    eligibilityFinancial: "",
+    eligibilityTechnical: "",
+    eligibilityJV: "",
+    technicalAnalysis: "",
+    boqSummary: "",
   });
 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -153,13 +160,17 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <label className="text-sm font-semibold ml-1">Location / City</label>
               <input name="location" value={formData.location} onChange={handleChange} type="text" placeholder="e.g. Nagpur, Maharashtra" className={inputClass} />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold ml-1">Contact Person</label>
               <input name="contactPerson" value={formData.contactPerson} onChange={handleChange} type="text" placeholder="Name of the contact officer" className={inputClass} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold ml-1">Designation</label>
+              <input name="officerDesignation" value={formData.officerDesignation} onChange={handleChange} type="text" placeholder="e.g. Executive Engineer" className={inputClass} />
             </div>
           </div>
 
@@ -206,6 +217,45 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
                 <input required name="dueDate" value={formData.dueDate} onChange={handleChange} type="date" className={`${inputClass} pl-11`} />
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="space-y-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Briefcase className="h-4 w-4 text-accent" />
+            <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Commercial, Eligibility & Analysis</span>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold ml-1">Payment Terms</label>
+            <textarea name="paymentTerms" value={formData.paymentTerms} onChange={handleChange} placeholder="e.g. 90% on milestone completion, 10% retention for one year..." className={textareaClass} />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold ml-1">Eligibility — Financial</label>
+              <textarea name="eligibilityFinancial" value={formData.eligibilityFinancial} onChange={handleChange} placeholder="Turnover, net worth, similar work value requirements..." className={textareaClass} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold ml-1">Eligibility — Technical</label>
+              <textarea name="eligibilityTechnical" value={formData.eligibilityTechnical} onChange={handleChange} placeholder="Qualification, machinery, experience requirements..." className={textareaClass} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold ml-1">Eligibility — JV / Consortium</label>
+              <textarea name="eligibilityJV" value={formData.eligibilityJV} onChange={handleChange} placeholder="Joint venture / consortium participation rules..." className={textareaClass} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold ml-1">Technical Analysis</label>
+              <textarea name="technicalAnalysis" value={formData.technicalAnalysis} onChange={handleChange} placeholder="Technical feasibility, methodology, specifications, risks..." className={textareaClass} />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold ml-1">BOQ / Price Schedule Summary</label>
+            <textarea name="boqSummary" value={formData.boqSummary} onChange={handleChange} placeholder="Key items, rates, quantities, and price schedule highlights..." className={textareaClass} />
           </div>
         </section>
 

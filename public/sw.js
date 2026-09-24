@@ -1,4 +1,4 @@
-const CACHE_NAME = "govtender-hub-v4";
+const CACHE_NAME = "govtender-hub-v5";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -25,6 +25,9 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  // Never intercept on localhost — avoids stale dev builds (no hard refresh needed).
+  if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return;
 
   if (request.mode === "navigate") {
     event.respondWith(
