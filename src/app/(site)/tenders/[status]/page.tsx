@@ -1,5 +1,4 @@
-import { ArrowLeft, Gavel } from "lucide-react";
-import Link from "next/link";
+import { Gavel } from "lucide-react";
 
 const budgetValues = [3.5, 7.2, 1.8];
 
@@ -8,12 +7,8 @@ export default async function TenderPage({ params }: { params: Promise<{ status:
   const statusName = status.charAt(0).toUpperCase() + status.slice(1);
 
   return (
-    <div className="min-h-screen bg-background p-[2%] pt-32">
+    <div className="w-full">
       <div className="max-w-4xl mx-auto space-y-8">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Home
-        </Link>
         <div className="flex items-center justify-between">
           <h1 className="text-4xl font-bold tracking-tight">{statusName} Tenders</h1>
           <div className="flex items-center gap-2 bg-accent/10 text-accent px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">
