@@ -49,7 +49,7 @@ export default function AdminLoginPage() {
       <section className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-slate-900 shadow-2xl shadow-black/40">
         <div className="border-b border-white/10 bg-gradient-to-br from-[#b86b35] to-[#9f5829] p-8">
           <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/30"><ShieldCheck /></div>
-          <p className="text-sm font-semibold tracking-widest text-white/85 uppercase">GovTender Hub</p>
+          <p className="text-sm font-semibold tracking-widest text-white/85 uppercase">GovTender Pro</p>
           <h1 className="mt-2 text-3xl font-bold">{setupRequired ? "Create admin access" : "Admin access"}</h1>
           <p className="mt-2 text-sm text-white/80">{setupRequired ? "Set the first password to secure this dashboard." : "Connect securely to manage tenders and documents."}</p>
         </div>

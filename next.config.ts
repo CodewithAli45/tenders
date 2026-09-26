@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async redirects() {
+    return [
+      {
+        source: "/pdf-manager",
+        destination: "/tender-document-tools",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

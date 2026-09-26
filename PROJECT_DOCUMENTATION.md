@@ -1,13 +1,13 @@
-# GovTender Hub — Project Documentation
+# GovTender Pro — Project Documentation
 
 ## 1. Introduction
 
-**GovTender Hub** is a web application for publishing and administering government/PSU tender opportunities. It has two distinct experiences:
+**GovTender Pro** is a web application for publishing and administering government/PSU tender opportunities. It has two distinct experiences:
 
 - A public tender-intelligence dashboard where visitors can browse, filter, sort, and inspect tenders.
 - A password-protected administration area where an operator manages organizations, tenders, and tender PDFs.
 
-The application is a Progressive Web App (PWA) and includes a separate, entirely browser-based PDF Manager. Tender, organization, credential, and attachment metadata live in Supabase; tender PDFs are stored in a public Supabase Storage bucket.
+The application is a Progressive Web App (PWA) and includes a separate, entirely browser-based Tender Document Tools suite (merge, split, arrange, compress). Tender, organization, credential, and attachment metadata live in Supabase; tender PDFs are stored in a public Supabase Storage bucket.
 
 ## 2. Scope and Key Capabilities
 
@@ -18,7 +18,7 @@ The application is a Progressive Web App (PWA) and includes a separate, entirely
 | Organization directory | Admins can create, list, and edit organizations and contact details. |
 | File management | Tender documents are uploaded to Supabase Storage and associated with a tender. |
 | Admin access | First-run password setup, password login, HMAC-signed HTTP-only session cookie, logout. |
-| PDF Manager | Client-side PDF merge, split, page arrangement, and file download. No PDF contents are sent to this app’s server. |
+| Tender Document Tools | Client-side PDF merge, split, page arrangement, file compression, and download. No PDF contents are sent to this app’s server. |
 | PWA | Installable app manifest, icons, service-worker registration, and basic app-shell caching. |
 
 ## 3. Technology Stack
@@ -111,7 +111,7 @@ All Supabase calls are made by server-side Next.js code using `SUPABASE_SERVICE_
 | `/about` | Static company/about content. | Present |
 | `/admin` | Protected management dashboard. | Functional |
 | `/admin/login` | First-run setup and password login. | Functional |
-| `/pdf-manager` | Client-side PDF merge, split, and page-arrange utility. | Functional |
+| `/tender-document-tools` | Client-side PDF merge, split, and page-arrange utility. | Functional |
 | `/tenders/[status]` | Generic status page. | Placeholder/demo cards; not connected to live data |
 | `/services/[service]` | Generic service landing page. | Template/static; CTA has no submission logic |
 | `/tools/[tool]` | Generic tool landing page. | Placeholder |
@@ -132,13 +132,14 @@ The home-page navigation exposes the status, services, and tools routes. Some na
 
 `src/app/globals.css` defines light/dark CSS variables for backgrounds, text, borders, primary blue, success green, and destructive red. Tailwind utilities build the interface. `glass-card` and `dropdown-popover` are reusable visual treatments. The root layout provides Geist Sans and Geist Mono fonts and global PWA metadata.
 
-### 6.4 PDF Manager
+### 6.4 Tender Document Tools
 
-The PDF Manager uses the browser’s File APIs, `pdf-lib`, and `jszip`:
+The Tender Document Tools (formerly PDF Manager) use the browser’s File APIs, `pdf-lib`, and `jszip`:
 
 - **Merge:** combines pages from multiple selected PDFs in user-controlled/sorted order.
 - **Split:** extracts one or more page ranges. Multiple resulting PDFs are downloaded as a ZIP.
 - **Arrange:** reorders pages and saves a new PDF.
+- **Compress:** reduces file size with an in-browser repack, upgrading automatically to a Ghostscript WASM engine for image-heavy (scanned) files.
 
 PDF operations and downloads happen locally in the visitor’s browser. This feature is separate from tender-document uploads.
 
@@ -378,7 +379,7 @@ These are important distinctions between the present code and intended product s
 
 1. **Tender edit mapping is incomplete.** `PATCH /api/tenders/:id` writes only core fields (`title`, organization, values, IDs, and dates). It currently does not persist `scopeOfWork`, location, or contact fields when edited in `TenderDetailView`.
 2. **Public tender detail does not include attachments.** The public endpoint maps tender fields but does not map attachment rows, so public detail can show tender data but not document links returned by the server. Admin listing does include document URLs.
-3. **Status/service/tool pages are not production modules.** Dynamic tender status pages use static sample cards; services and most tools are informational placeholders. Only `/pdf-manager` is a working standalone tool.
+3. **Status/service/tool pages are not production modules.** Dynamic tender status pages use static sample cards; services and most tools are informational placeholders. Only `/tender-document-tools` (formerly `/pdf-manager`) is a working standalone tool.
 4. **No delete endpoints/UI.** Tenders, organizations, and attachments can be created/read/updated but not deleted through the application.
 5. **No organization foreign key.** Tender organization names can become stale or differ from directory records because the relationship is text-only.
 6. **No server-side input normalization/validation beyond required presence.** The API does not validate numeric ranges, date ordering, email/phone format, or tender ID format. The database does enforce the unique tender internal ID and attachment type check.

@@ -1,5 +1,5 @@
 /**
- * PDF Manager Dashboard
+ * Tender Document Tools
  *
  * A fully client-side PDF management tool. All operations (merge, split, arrange)
  * run entirely in the browser using pdf-lib — no data ever leaves the user's device.
@@ -404,9 +404,9 @@ export default function PDFManagerPage() {
                 <FileText className="h-4 w-4" />
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-sm leading-tight">PDF Manager</p>
+                <p className="font-bold text-sm leading-tight">Tender Document Tools</p>
                 <p className="text-[10px] text-muted-foreground leading-tight truncate">
-                  Merge · Split · Arrange · Compress
+                  Prepare your tender documents for portal submission
                 </p>
               </div>
             </div>

@@ -14,14 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GovTender Hub",
+  title: "GovTender Pro",
   description: "Real-time Government Tender Management",
-  applicationName: "GovTender Hub",
+  applicationName: "GovTender Pro",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "GovTender",
+    title: "GovTender Pro",
   },
   icons: {
     icon: "/icons/icon-192.png",
