@@ -17,7 +17,16 @@ export async function POST(request: Request) {
     const path = `${tender.id}/${Date.now()}-${safeName}`;
     await supabaseRequest(`/storage/v1/object/tender-attachments/${path}`, { method: "POST", headers: { "Content-Type": file.type || "application/octet-stream", "x-upsert": "false" }, body: Buffer.from(await file.arrayBuffer()) });
     const url = `${supabaseUrl()}/storage/v1/object/public/tender-attachments/${path}`;
-    await supabaseRequest("/rest/v1/attachments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tender_id: tender.id, file_name: file.name, file_path: path, file_url: url, attachment_type: type }) });
+    try {
+      await supabaseRequest("/rest/v1/attachments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tender_id: tender.id, file_name: file.name, file_path: path, file_url: url, attachment_type: type }) });
+    } catch (error) {
+      try {
+        await supabaseRequest(`/storage/v1/object/tender-attachments/${path}`, { method: "DELETE" });
+      } catch (cleanupError) {
+        console.error("Could not clean up uploaded file after attachment record failure:", cleanupError);
+      }
+      throw error;
+    }
     return NextResponse.json({ url });
   } catch (error) { console.error("Attachment upload error:", error); return NextResponse.json({ error: "Failed to upload attachment" }, { status: 500 }); }
 }

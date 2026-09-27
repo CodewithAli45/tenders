@@ -62,7 +62,7 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
     setIsSubmitting(true);
     setError(null);
     try {
-      const response = await axios.post("/api/tenders", { ...formData, category: "PSU" });
+      const response = await axios.post("/api/tenders", formData);
       onSuccess(response.data);
     } catch (err: unknown) {
       console.error("Error creating tender:", err);

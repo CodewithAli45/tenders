@@ -166,7 +166,6 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
       };
       setFormData(updatedTender);
       setSuccess(isCorrigendum ? "Corrigendum uploaded successfully!" : "File uploaded successfully!");
-      await axios.patch(`/api/tenders/${tender._id}`, updatedTender);
       onUpdate();
       setTimeout(() => setSuccess(null), 3000);
     } catch {

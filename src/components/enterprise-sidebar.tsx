@@ -55,13 +55,13 @@ export function EnterpriseSidebar() {
           </div>
           <div className="space-y-1">
             {quickModules.map((item) => (
-              <button
+              <div
                 key={item.label}
-                className="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all cursor-pointer flex items-center gap-2.5"
+                className="w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold text-muted-foreground flex items-center gap-2.5"
               >
                 <item.icon className="h-3.5 w-3.5 text-primary/80" />
                 <span>{item.label}</span>
-              </button>
+              </div>
             ))}
           </div>
         </div>
