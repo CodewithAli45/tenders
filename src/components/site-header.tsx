@@ -10,6 +10,7 @@ import {
   Settings,
   Sparkles,
   X,
+  MessageCircle
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -82,7 +83,8 @@ export function SiteHeader() {
             href="tel:+919661221326"
             className="flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors"
           >
-            <Phone className="h-3.5 w-3.5 text-primary" />
+            <Phone className="h-3.5 w-3.5 text-primary" /> 
+            <MessageCircle className="h-3.5 w-3.5 text-green-500" />
             <span className="hidden md:inline font-semibold">Contact:</span> +91
             9661221326
           </a>

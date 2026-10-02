@@ -40,7 +40,7 @@ GovernTender Pro is a product of MASHREQ ENTERPRISES. © 2026 MASHREQ ENTERPRISE
 
 ## Admin login setup
 
-1. In your Supabase project's SQL Editor, run [the admin access migration](./supabase/migrations/20260818000000_admin_access.sql) and [the admin data migration](./supabase/migrations/20260818010000_admin_data.sql).
+1. In your Supabase project's SQL Editor, run every file in [`supabase/migrations`](./supabase/migrations/) in filename order. This includes the admin, tender detail, and post-bid tracking schema.
 2. Add these values to `.env.local`. In Supabase **Settings → API**, use the server-only **Secret key** (`sb_secret_…`), or the legacy `service_role` key. Do not use a Publishable (`sb_publishable_…`) or anon key:
 
 ```env

@@ -15,7 +15,6 @@ import {
   History,
   Layers,
   PieChart,
-  Radio,
   ShieldCheck,
   Star,
   TrendingUp,
@@ -44,7 +43,6 @@ export const navItems: NavItem[] = [
     label: "Tenders",
     href: "/tenders",
     dropdown: [
-      { label: "Live Tenders", href: "/tenders/live", description: "Active open bidding opportunities", icon: Radio },
       { label: "Status Tracker", href: "/tenders/status", description: "Check evaluation & technical bids", icon: Activity },
       { label: "Awarded Bids", href: "/tenders/award", description: "Recently finalized contract awards", icon: Award },
       { label: "Cancelled", href: "/tenders/cancelled", description: "Archived & revoked tenders", icon: AlertTriangle },

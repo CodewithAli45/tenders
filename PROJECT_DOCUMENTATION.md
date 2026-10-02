@@ -45,7 +45,7 @@ The application is a Progressive Web App (PWA) and includes a separate, entirely
 │   │   ├── admin/                      # Protected admin screen and login
 │   │   ├── api/                        # Route handlers (backend API)
 │   │   ├── pdf-manager/page.tsx        # Browser-only PDF tool
-│   │   ├── tenders/[status]/page.tsx   # Status route placeholder
+│   │   ├── tenders/[status]/page.tsx   # Routes status tracking to the protected admin workflow
 │   │   ├── services/[service]/page.tsx # Service route template
 │   │   └── tools/[tool]/page.tsx       # Tool route placeholder
 │   ├── components/                     # Dashboard/forms/detail view/PWA register
@@ -112,7 +112,8 @@ All Supabase calls are made by server-side Next.js code using `SUPABASE_SERVICE_
 | `/admin` | Protected management dashboard. | Functional |
 | `/admin/login` | First-run setup and password login. | Functional |
 | `/tender-document-tools` | Client-side PDF merge, split, and page-arrange utility. | Functional |
-| `/tenders/[status]` | Generic status page. | Placeholder/demo cards; not connected to live data |
+| `/tenders/status` | Admin post-bid tracker. | Protected workflow for evaluation stages and bidder results |
+| `/tenders/[status]` | Other status routes. | Award/cancel routes remain placeholders |
 | `/services/[service]` | Generic service landing page. | Template/static; CTA has no submission logic |
 | `/tools/[tool]` | Generic tool landing page. | Placeholder |
 
@@ -159,6 +160,13 @@ The backend is implemented as Next.js Route Handlers under `src/app/api`. `src/l
 | `POST /api/organizations` | Admin | Creates an organization. `name` is required. |
 | `PATCH /api/organizations` | Admin | Updates an organization; request body includes `_id`. |
 | `POST /api/upload` | Admin | Uploads a tender file and creates its attachment metadata. |
+| `GET /api/admin/tender-tracking` | Admin | Lists tracked tenders with their current deadline and bidders. |
+| `POST /api/admin/tender-tracking` | Admin | Adds a tender to the persistent evaluation tracker. |
+| `PATCH /api/admin/tender-tracking/:id` | Admin | Updates the evaluation stage or internal notes. |
+| `DELETE /api/admin/tender-tracking/:id` | Admin | Removes the tracking record and its bidder rows. |
+| `POST /api/admin/tender-tracking/:id/bidders` | Admin | Adds a bidder, technical result, quoted rate, rank, and notes. |
+| `PATCH /api/admin/tender-tracking/bidders/:id` | Admin | Updates a bidder record. |
+| `DELETE /api/admin/tender-tracking/bidders/:id` | Admin | Removes a bidder record. |
 | `GET /api/admin/status` | Public | Reports whether initial admin setup is required. |
 | `POST /api/admin/setup` | Public, first-run only | Creates the initial password and session. |
 | `POST /api/admin/login` | Public | Verifies the password and creates a session. |
@@ -245,6 +253,20 @@ attachments                   │ many
   tender_id (FK) ─────────────┘
   file_path (unique)
   attachment_type
+
+tender_tracking
+  id (UUID PK)
+  tender_id (unique FK) ───────┘ 1 tracking record per tender
+  stage
+  notes
+      │ 1
+      │
+tender_bidders                 │ many
+  tracking_id (FK)
+  bidder_name
+  technical_status
+  quoted_rate
+  financial_rank
 ```
 
 Important: `tenders.organization` is plain text, not a foreign key to `organizations`. The organization table supplies the admin form’s dropdown and directory, but referential integrity is not enforced by PostgreSQL.
@@ -337,11 +359,10 @@ ADMIN_SESSION_SECRET=a-long-random-secret-of-at-least-32-bytes
 
 Run these migration files in order in the Supabase SQL Editor (or through the Supabase CLI):
 
-1. `20260818000000_admin_access.sql`
-2. `20260818010000_admin_data.sql`
-3. `20260819000000_organization_details_optional.sql`
-4. `20260819010000_simplify_tenders.sql`
-5. `20260902000000_tender_extra_fields.sql`
+Apply every file in `supabase/migrations/` in filename order, including:
+
+- `20260924000000_tender_professional_fields.sql`
+- `20261002000000_tender_tracking.sql`
 
 The data migration creates the public `tender-attachments` storage bucket. Ensure the storage API is enabled for the Supabase project.
 
@@ -379,13 +400,14 @@ These are important distinctions between the present code and intended product s
 
 1. **Tender edit mapping is incomplete.** `PATCH /api/tenders/:id` writes only core fields (`title`, organization, values, IDs, and dates). It currently does not persist `scopeOfWork`, location, or contact fields when edited in `TenderDetailView`.
 2. **Public tender detail does not include attachments.** The public endpoint maps tender fields but does not map attachment rows, so public detail can show tender data but not document links returned by the server. Admin listing does include document URLs.
-3. **Status/service/tool pages are not production modules.** Dynamic tender status pages use static sample cards; services and most tools are informational placeholders. Only `/tender-document-tools` (formerly `/pdf-manager`) is a working standalone tool.
+3. **Status/service/tool pages are at different completion levels.** `/tenders/status` routes to the protected admin tracker; Awarded/Cancelled, services, and most tools remain informational placeholders. Only `/tender-document-tools` (formerly `/pdf-manager`) is a working standalone tool.
 4. **No delete endpoints/UI.** Tenders, organizations, and attachments can be created/read/updated but not deleted through the application.
 5. **No organization foreign key.** Tender organization names can become stale or differ from directory records because the relationship is text-only.
 6. **No server-side input normalization/validation beyond required presence.** The API does not validate numeric ranges, date ordering, email/phone format, or tender ID format. The database does enforce the unique tender internal ID and attachment type check.
 7. **Public attachments are deliberately public.** Anyone with a generated storage URL can access a file. Use private storage plus signed URLs if documents must be restricted.
 8. **The admin model is a single shared password.** There are no individual accounts, roles, password reset flow, rate limits, audit trail, or CSRF-specific protection beyond same-site cookie behavior.
 9. **`updated_at` is application-managed on updates.** The migrations set defaults but do not create a database trigger to update this timestamp automatically.
+10. **Tracker membership is independent from tender dates.** A `tender_tracking` row remains linked when the tender due date is extended; the current deadline badge is read from the tender record. Bidder and quoted-rate data is admin-only.
 
 ## 13. Recommended Operational Checklist
 
@@ -409,4 +431,3 @@ These are important distinctions between the present code and intended product s
 | Supabase requests | `src/lib/supabase-server.ts` |
 | Schema | `supabase/migrations/*.sql` |
 | Global UI/PWA | `src/app/layout.tsx`, `src/app/globals.css`, `public/manifest.webmanifest`, `public/sw.js` |
-

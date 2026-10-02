@@ -36,7 +36,9 @@ export default function AdminLoginPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Connection failed.");
-      window.location.assign("/admin");
+      const requestedDestination = new URLSearchParams(window.location.search).get("next");
+      const destination = requestedDestination?.startsWith("/") && !requestedDestination.startsWith("//") && !requestedDestination.includes("\\") ? requestedDestination : "/admin";
+      window.location.assign(destination);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Connection failed.");
     } finally {
