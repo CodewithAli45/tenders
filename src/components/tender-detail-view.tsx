@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, FileText, Save, AlertCircle, Paperclip, CheckCircle2, Plus, MapPin, Phone, Mail, User, Building2, Calendar, Clock, IndianRupee, ShieldCheck, Gavel, FileCheck, Trash2, Banknote, Users, BadgeCheck, Scale, Wrench, ClipboardList, FileSpreadsheet, ReceiptText } from "lucide-react";
+import { X, FileText, Save, AlertCircle, Paperclip, CheckCircle2, Plus, MapPin, Phone, Mail, User, Building2, Calendar, Clock, ShieldCheck, Gavel, FileCheck, Trash2, Banknote, Users, BadgeCheck, Scale, Wrench, ClipboardList, FileSpreadsheet, ReceiptText, CircleDollarSign } from "lucide-react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
+import { RichTextEditor } from "./rich-text-editor";
+import { RichContent } from "./rich-content";
 
 interface TenderDetailViewProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,7 +39,7 @@ const formatTimestamp = (value?: string | null) => {
 };
 
 const compactInputClass = "w-full h-8 bg-transparent text-sm font-bold outline-none focus:ring-2 focus:ring-primary/30 rounded-lg px-2 border border-transparent focus:border-primary transition-all";
-const textareaClass = "w-full bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none disabled:opacity-70 disabled:cursor-not-allowed transition-all min-h-[96px] resize-y";
+const textareaClass = "w-full bg-black/2 dark:bg-white/2 border border-black/5 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none disabled:opacity-70 disabled:cursor-not-allowed transition-all min-h-[72px] resize-y";
 const fieldLabelClass = "flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground";
 
 type FieldType = "text" | "number" | "date";
@@ -46,10 +48,14 @@ function hasValue(value: unknown) {
   return value !== null && value !== undefined && String(value).trim() !== "";
 }
 
-function Section({ icon: Icon, title, dot = "primary", children }: { icon?: React.ComponentType<{ className?: string }>; title: string; dot?: "primary" | "accent"; children: React.ReactNode }) {
+const handleRichChange = (onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void) => (name: string, html: string) => {
+  onChange({ target: { name, value: html } } as React.ChangeEvent<HTMLTextAreaElement>);
+};
+
+function Section({ icon: Icon, title, dot = "primary", id, children }: { icon?: React.ComponentType<{ className?: string }>; title: string; dot?: "primary" | "accent"; id?: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3">
-      <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
+    <section id={id} className="scroll-mt-24 space-y-3">
+      <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
         <span className={`h-1.5 w-1.5 rounded-full ${dot === "accent" ? "bg-accent" : "bg-primary"}`} />
         {Icon && <Icon className={`h-4 w-4 ${dot === "accent" ? "text-accent" : "text-primary"}`} />}
         {title}
@@ -73,7 +79,7 @@ function FieldTile({ label, icon: Icon, name, value, readOnly, onChange, type = 
   const hasVal = hasValue(value);
   const inputVal = type === "date" && value ? new Date(String(value)).toISOString().split("T")[0] : (hasVal ? String(value) : "");
   return (
-    <div className="rounded-xl border border-border bg-background/40 p-3.5 space-y-1.5 transition-all focus-within:border-primary/40 focus-within:bg-primary/[0.03]">
+    <div className="rounded-xl border border-border bg-background/40 px-3 py-2.5 space-y-1 transition-all focus-within:border-primary/40 focus-within:bg-primary/[0.03]">
       <p className={fieldLabelClass}>
         {Icon && <Icon className="h-3.5 w-3.5 text-primary/80 shrink-0" />}
         <span className="truncate">{label}</span>
@@ -91,13 +97,26 @@ function FieldTile({ label, icon: Icon, name, value, readOnly, onChange, type = 
   );
 }
 
-function TextBlock({ label, icon: Icon, name, value, readOnly, onChange, placeholder, rows = 4 }: {
+function SummaryMetric({ icon: Icon, label, value, accent = false }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; accent?: boolean }) {
+  return (
+    <div className={`min-w-0 rounded-xl border px-3 py-2.5 ${accent ? "border-warning/30 bg-warning/5" : "border-border/80 bg-background/70"}`}>
+      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        <Icon className={`h-3.5 w-3.5 shrink-0 ${accent ? "text-warning" : "text-primary"}`} />
+        <span className="truncate">{label}</span>
+      </p>
+      <p className={`mt-1 truncate text-sm font-bold ${accent ? "text-warning" : "text-foreground"}`} title={value}>{value}</p>
+    </div>
+  );
+}
+
+function TextBlock({ label, icon: Icon, name, value, readOnly, onChange, rich = false, placeholder, rows = 4 }: {
   label: string;
   icon?: React.ComponentType<{ className?: string }>;
   name: string;
   value?: unknown;
   readOnly: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  rich?: boolean;
   placeholder?: string;
   rows?: number;
 }) {
@@ -108,7 +127,13 @@ function TextBlock({ label, icon: Icon, name, value, readOnly, onChange, placeho
         {Icon && <Icon className="h-3.5 w-3.5 text-primary/80 shrink-0" />}
         <span>{label}</span>
       </p>
-      {readOnly ? (
+      {rich ? (
+        readOnly ? (
+          <RichContent html={value} />
+        ) : (
+          <RichTextEditor name={name} value={value} onChange={handleRichChange(onChange)} placeholder={placeholder} minHeight={rows * 24} />
+        )
+      ) : readOnly ? (
         text ? (
           <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{text}</p>
         ) : (
@@ -121,8 +146,17 @@ function TextBlock({ label, icon: Icon, name, value, readOnly, onChange, placeho
   );
 }
 
-const renderValue = (v: unknown) => formatValue(Number(v));
-const renderEmd = (v: unknown) => formatEmd(Number(v));
+function getDueStatus(value?: string | null) {
+  if (!value) return { label: "Due date unavailable", tone: "muted" as const };
+  const due = new Date(`${value.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(due.getTime())) return { label: "Due date unavailable", tone: "muted" as const };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = Math.ceil((due.getTime() - today.getTime()) / 86400000);
+  if (days < 0) return { label: "Closed", tone: "muted" as const };
+  if (days <= 2) return { label: days === 0 ? "Due today" : `Due in ${days} day${days === 1 ? "" : "s"}`, tone: "urgent" as const };
+  return { label: `Due in ${days} days`, tone: "open" as const };
+}
 
 export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }: TenderDetailViewProps) {
   const [formData, setFormData] = useState({ ...tender });
@@ -134,6 +168,11 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
   const [showVerifyPrompt, setShowVerifyPrompt] = useState(false);
   const [uploadType, setUploadType] = useState<"document" | "corrigendum">("document");
   const [deletePending, setDeletePending] = useState<string | null>(null);
+  const dueStatus = getDueStatus(formData.dueDate);
+
+  const jumpToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -219,58 +258,85 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
   return (
     <div className="h-full flex flex-col bg-background/50 backdrop-blur-xl">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-border flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3 min-w-0">
-          <div className="h-10 w-10 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center mt-0.5">
+      <div className="px-4 py-3 border-b border-border flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <div className="h-9 w-9 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center mt-0.5">
             <FileText className="h-5 w-5 text-primary" />
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-mono text-xs font-bold tracking-wide border border-primary/20">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary font-mono text-[11px] font-bold tracking-wide border border-primary/20">
                 {tender.internalId}
               </span>
-              <h2 className="text-xl font-bold truncate">{tender.tenderNo}</h2>
+              <h2 className="text-base font-bold truncate">{tender.tenderNo}</h2>
             </div>
-            <div className="flex items-center gap-2.5 mt-1 flex-wrap">
-              <p className="text-xs text-muted-foreground">{readOnly ? "View complete tender record" : "Manage complete tender record"}</p>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <p className="text-[11px] text-muted-foreground">{readOnly ? "View complete tender record" : "Manage complete tender record"}</p>
               <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
               <p className="text-[10px] font-semibold text-muted-foreground/80">Last updated {formatTimestamp(formData.updatedAt || formData.createdAt)}</p>
             </div>
           </div>
         </div>
-        <button onClick={onClose} className="h-10 w-10 shrink-0 border border-border rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer" aria-label="Close">
-          <X className="h-5 w-5" />
+        <button onClick={onClose} className="h-9 w-9 shrink-0 border border-border rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer" aria-label="Close">
+          <X className="h-4.5 w-4.5" />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-8 scrollbar-hide">
+      <div className="relative flex-1 overflow-y-auto px-4 pb-4 pt-0 lg:px-6 space-y-5 scrollbar-hide">
         {error && (
-          <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-xl flex items-center gap-3">
+          <div className="bg-destructive/10 border border-destructive/20 text-destructive p-3 rounded-xl flex items-center gap-3">
             <AlertCircle className="h-5 w-5 flex-shrink-0" />
             <p className="text-sm font-medium">{error}</p>
           </div>
         )}
         {success && (
-          <div className="bg-accent/10 border border-accent/20 text-accent p-4 rounded-xl flex items-center gap-3">
+          <div className="bg-accent/10 border border-accent/20 text-accent p-3 rounded-xl flex items-center gap-3">
             <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
             <p className="text-sm font-medium">{success}</p>
           </div>
         )}
 
-        {/* Tender Title */}
-        <Section icon={FileText} title="Tender Title">
-          <div className="rounded-2xl border border-border bg-card/60 p-5">
-            {readOnly ? (
-              <h1 className="text-lg lg:text-xl font-bold leading-snug">{formData.title || "—"}</h1>
-            ) : (
-              <textarea name="title" value={formData.title} onChange={handleChange} className={`${textareaClass} font-bold min-h-[64px]`} rows={2} />
-            )}
+        <nav aria-label="Tender detail sections" className="sticky top-0 z-20 -mx-4 border-y border-border bg-background px-4 py-2 sm:-mx-6 sm:px-6">
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+            {[['overview', 'Overview'], ['tender-information', 'Tender info'], ['authority-contact', 'Contact'], ['eligibility', 'Eligibility'], ['commercial', 'Commercial'], ['scope', 'Scope'], ['boq', 'BOQ'], ['documents', 'Documents']].map(([id, label]) => (
+              <button key={id} type="button" onClick={() => jumpToSection(id)} className="shrink-0 rounded-lg px-3 py-2 text-xs font-bold text-muted-foreground transition hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Jump to ${label}`}>
+                {label}
+              </button>
+            ))}
           </div>
-        </Section>
+        </nav>
+
+        <section id="overview" className="scroll-mt-24 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-primary/[0.07] shadow-sm">
+          <div className="p-4 sm:p-6">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground">
+              <span className="rounded-md bg-primary/10 px-2 py-1 font-mono text-primary">{formData.internalId}</span>
+              <span>{formData.organization || "Organisation not specified"}</span>
+              <span aria-hidden="true">·</span>
+              <span>{formData.tenderNo || "Reference number unavailable"}</span>
+            </div>
+            {readOnly ? (
+              <h1 className="mt-3 max-w-5xl text-xl font-bold leading-snug tracking-tight sm:text-2xl">{formData.title || "Tender title unavailable"}</h1>
+            ) : (
+              <textarea name="title" value={formData.title} onChange={handleChange} className={`${textareaClass} mt-3 min-h-[64px] bg-background/70 text-lg font-bold`} rows={2} aria-label="Tender title" />
+            )}
+            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+              <SummaryMetric icon={CircleDollarSign} label="Contract value" value={formatValue(Number(formData.tenderValue))} />
+              <SummaryMetric icon={ShieldCheck} label="EMD" value={formatEmd(Number(formData.emdAmount))} />
+              <SummaryMetric icon={Calendar} label="Submission due" value={formatDate(formData.dueDate)} accent={dueStatus.tone === "urgent"} />
+              <SummaryMetric icon={MapPin} label="Work location" value={hasValue(formData.location) ? String(formData.location) : "Not specified"} />
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-bold ${dueStatus.tone === "urgent" ? "bg-warning/15 text-warning" : dueStatus.tone === "open" ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"}`}>
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />{dueStatus.label}
+              </span>
+              <span className="text-muted-foreground">Published {formatDate(formData.publishDate)}</span>
+            </div>
+          </div>
+        </section>
 
         {/* Basic Information */}
-        <Section icon={Building2} title="Basic Information">
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 rounded-2xl border border-border bg-card/60 p-4">
+        <Section icon={Building2} title="Tender information" id="tender-information">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 rounded-2xl border border-border bg-card/60 p-3.5">
             <FieldTile label="Organisation" icon={Building2} name="organization" value={formData.organization} readOnly={readOnly} onChange={handleChange} placeholder="Name of department" />
             <FieldTile label="Reference No." icon={Gavel} name="tenderNo" value={formData.tenderNo} readOnly={readOnly} onChange={handleChange} placeholder="TN-2024-001" />
             <FieldTile label="Portal Tender ID" icon={FileCheck} name="portalId" value={formData.portalId} readOnly={readOnly} onChange={handleChange} placeholder="Portal-ID-12345" />
@@ -279,59 +345,57 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
           </div>
         </Section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Commercial */}
-          <Section icon={Banknote} title="Commercial">
-            <div className="rounded-2xl border border-border bg-card/60 p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FieldTile label="EMD" icon={ShieldCheck} name="emdAmount" type="number" value={formData.emdAmount} readOnly={readOnly} onChange={handleChange} render={renderEmd} />
-              <FieldTile label="Contract Value" icon={IndianRupee} name="tenderValue" type="number" value={formData.tenderValue} readOnly={readOnly} onChange={handleChange} render={renderValue} />
-              <div className="sm:col-span-2">
-                <TextBlock label="Payment Terms" icon={ReceiptText} name="paymentTerms" value={formData.paymentTerms} readOnly={readOnly} onChange={handleChange} placeholder="e.g. 90% on milestone completion, 10% retention for one year..." rows={3} />
-              </div>
+        <Section icon={Users} title="Authority & contact" id="authority-contact">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl border border-border bg-card/60 p-3.5">
+            <div className="sm:col-span-2">
+              <FieldTile label="Location of Works" icon={MapPin} name="location" value={formData.location} readOnly={readOnly} onChange={handleChange} placeholder="e.g. Nagpur, Maharashtra" />
             </div>
-          </Section>
-
-          {/* Authority / Contact */}
-          <Section icon={Users} title="Authority / Contact">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl border border-border bg-card/60 p-4">
-              <div className="sm:col-span-2">
-                <FieldTile label="Location of Works" icon={MapPin} name="location" value={formData.location} readOnly={readOnly} onChange={handleChange} placeholder="e.g. Nagpur, Maharashtra" />
-              </div>
-              <FieldTile label="Officer" icon={User} name="contactPerson" value={formData.contactPerson} readOnly={readOnly} onChange={handleChange} placeholder="Name of the officer" />
-              <FieldTile label="Designation" icon={BadgeCheck} name="officerDesignation" value={formData.officerDesignation} readOnly={readOnly} onChange={handleChange} placeholder="e.g. Executive Engineer" />
-              <FieldTile label="Phone" icon={Phone} name="contactPhone" value={formData.contactPhone} readOnly={readOnly} onChange={handleChange} placeholder="+91 00000 00000" />
-              <FieldTile label="Email" icon={Mail} name="contactEmail" value={formData.contactEmail} readOnly={readOnly} onChange={handleChange} placeholder="officer@example.com" />
-            </div>
-          </Section>
-        </div>
-
-        {/* Eligibility */}
-        <Section icon={ShieldCheck} title="Eligibility" dot="accent">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 rounded-2xl border border-border bg-card/60 p-5">
-            <TextBlock label="Financial Criteria" icon={Scale} name="eligibilityFinancial" value={formData.eligibilityFinancial} readOnly={readOnly} onChange={handleChange} placeholder="Turnover, net worth, similar work value requirements..." />
-            <TextBlock label="Technical Criteria" icon={Wrench} name="eligibilityTechnical" value={formData.eligibilityTechnical} readOnly={readOnly} onChange={handleChange} placeholder="Qualification, machinery, experience requirements..." />
-            <TextBlock label="JV / Consortium" icon={Users} name="eligibilityJV" value={formData.eligibilityJV} readOnly={readOnly} onChange={handleChange} placeholder="Joint venture / consortium participation rules..." />
+            <FieldTile label="Officer" icon={User} name="contactPerson" value={formData.contactPerson} readOnly={readOnly} onChange={handleChange} placeholder="Name of the officer" />
+            <FieldTile label="Designation" icon={BadgeCheck} name="officerDesignation" value={formData.officerDesignation} readOnly={readOnly} onChange={handleChange} placeholder="e.g. Executive Engineer" />
+            <FieldTile label="Phone" icon={Phone} name="contactPhone" value={formData.contactPhone} readOnly={readOnly} onChange={handleChange} placeholder="+91 00000 00000" />
+            <FieldTile label="Email" icon={Mail} name="contactEmail" value={formData.contactEmail} readOnly={readOnly} onChange={handleChange} placeholder="officer@example.com" />
           </div>
         </Section>
 
+        {/* Eligibility */}
+        <Section icon={ShieldCheck} title="Eligibility & qualification" dot="accent" id="eligibility">
+            <div className="grid grid-cols-1 gap-4 rounded-2xl border border-border bg-card/60 p-3.5 lg:grid-cols-3">
+              <div className="min-w-0">
+                <TextBlock label="Financial Criteria" icon={Scale} name="eligibilityFinancial" rich value={formData.eligibilityFinancial} readOnly={readOnly} onChange={handleChange} placeholder="Turnover, net worth, similar work value requirements..." />
+              </div>
+              <div className="min-w-0">
+                <TextBlock label="Technical Criteria" icon={Wrench} name="eligibilityTechnical" rich value={formData.eligibilityTechnical} readOnly={readOnly} onChange={handleChange} placeholder="Qualification, machinery, experience requirements..." />
+              </div>
+              <div className="min-w-0">
+                <TextBlock label="JV / Consortium" icon={Users} name="eligibilityJV" rich value={formData.eligibilityJV} readOnly={readOnly} onChange={handleChange} placeholder="Joint venture / consortium participation rules..." />
+              </div>
+            </div>
+          </Section>
+
+        <Section icon={Banknote} title="Commercial terms" id="commercial">
+            <div className="rounded-2xl border border-border bg-card/60 p-3.5">
+                <TextBlock label="Payment Terms" icon={ReceiptText} name="paymentTerms" rich value={formData.paymentTerms} readOnly={readOnly} onChange={handleChange} placeholder="e.g. 90% on milestone completion, 10% retention for one year..." rows={3} />
+            </div>
+        </Section>
+
         {/* Scope & Technical Analysis */}
-        <Section icon={ClipboardList} title="Scope & Technical Analysis">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 rounded-2xl border border-border bg-card/60 p-5">
-            <TextBlock label="Scope of Work" icon={ClipboardList} name="scopeOfWork" value={formData.scopeOfWork} readOnly={readOnly} onChange={handleChange} placeholder="Describe the detailed scope of work for this tender..." />
-            <TextBlock label="Technical Analysis" icon={Wrench} name="technicalAnalysis" value={formData.technicalAnalysis} readOnly={readOnly} onChange={handleChange} placeholder="Technical feasibility, methodology, specifications, risks..." />
+        <Section icon={ClipboardList} title="Scope & technical analysis" id="scope">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 rounded-2xl border border-border bg-card/60 p-3.5">
+            <TextBlock label="Scope of Work" icon={ClipboardList} name="scopeOfWork" rich value={formData.scopeOfWork} readOnly={readOnly} onChange={handleChange} placeholder="Describe the detailed scope of work for this tender..." />
+            <TextBlock label="Technical Analysis" icon={Wrench} name="technicalAnalysis" rich value={formData.technicalAnalysis} readOnly={readOnly} onChange={handleChange} placeholder="Technical feasibility, methodology, specifications, risks..." />
           </div>
         </Section>
 
         {/* BOQ / Price Schedule */}
-        <Section icon={FileSpreadsheet} title="BOQ / Price Schedule">
-          <div className="rounded-2xl border border-border bg-card/60 p-5">
-            <TextBlock label="BOQ Summary / Price Schedule Notes" icon={FileSpreadsheet} name="boqSummary" value={formData.boqSummary} readOnly={readOnly} onChange={handleChange} placeholder="Key items, rates, quantities, and price schedule highlights..." rows={4} />
+        <Section icon={FileSpreadsheet} title="BOQ / price schedule" id="boq">
+          <div className="rounded-2xl border border-border bg-card/60 p-3.5">
+            <TextBlock label="BOQ Summary / Price Schedule Notes" icon={FileSpreadsheet} name="boqSummary" rich value={formData.boqSummary} readOnly={readOnly} onChange={handleChange} placeholder="Key items, rates, quantities, and price schedule highlights..." rows={4} />
           </div>
         </Section>
 
         {/* Documents & Corrigenda */}
-        <Section icon={Paperclip} title="Tender Documents & Corrigenda">
-          <div className="rounded-2xl border border-border bg-card/60 p-5 space-y-4">
+        <Section icon={Paperclip} title="Tender documents & corrigenda" id="documents">
+          <div className="rounded-2xl border border-border bg-card/60 p-3.5 space-y-4">
             <div className="flex p-1 bg-muted rounded-xl gap-1">
               <button
                 type="button"
@@ -391,17 +455,14 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-5 border-t border-border bg-background/50 backdrop-blur-md flex gap-4">
-        <button onClick={onClose} className="flex-1 h-12 rounded-xl text-sm font-bold border border-border hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer">
-          Close
-        </button>
-        {!readOnly && (
-          <button onClick={() => setShowVerifyPrompt(true)} className="flex-[2] h-12 bg-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer">
+      {!readOnly && (
+        <div className="px-4 py-3 border-t border-border bg-background/50 backdrop-blur-md flex">
+          <button onClick={() => setShowVerifyPrompt(true)} className="w-full h-10 bg-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer">
             <Save className="h-4 w-4" />
-            Save & Verify
+            Save &amp; Verify
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       <AnimatePresence>
         {showVerifyPrompt && (

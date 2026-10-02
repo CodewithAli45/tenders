@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Calendar, FileText, Clock, Briefcase, FileCheck2, AlertCircle } from "lucide-react";
 import axios from "axios";
+import { RichTextEditor } from "./rich-text-editor";
 
 interface NewTenderFormProps {
   onClose: () => void;
@@ -57,6 +58,10 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleRichChange = (name: string, html: string) => {
+    setFormData((prev) => ({ ...prev, [name]: html }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -75,7 +80,6 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
 
   const inputClass = "w-full h-11 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all";
   const numberInputClass = `${inputClass} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`;
-  const textareaClass = "w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all min-h-[120px] resize-y";
 
   return (
     <div className="h-full flex flex-col bg-background/50 backdrop-blur-xl">
@@ -156,7 +160,7 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
 
           <div className="space-y-2">
             <label className="text-sm font-semibold ml-1">Scope of Work</label>
-            <textarea name="scopeOfWork" value={formData.scopeOfWork} onChange={handleChange} placeholder="Describe the detailed scope of work for this tender..." className={textareaClass} />
+            <RichTextEditor name="scopeOfWork" value={formData.scopeOfWork} onChange={handleRichChange} placeholder="Describe the detailed scope of work for this tender..." />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -228,34 +232,34 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
 
           <div className="space-y-2">
             <label className="text-sm font-semibold ml-1">Payment Terms</label>
-            <textarea name="paymentTerms" value={formData.paymentTerms} onChange={handleChange} placeholder="e.g. 90% on milestone completion, 10% retention for one year..." className={textareaClass} />
+            <RichTextEditor name="paymentTerms" value={formData.paymentTerms} onChange={handleRichChange} placeholder="e.g. 90% on milestone completion, 10% retention for one year..." />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-semibold ml-1">Eligibility — Financial</label>
-              <textarea name="eligibilityFinancial" value={formData.eligibilityFinancial} onChange={handleChange} placeholder="Turnover, net worth, similar work value requirements..." className={textareaClass} />
+              <RichTextEditor name="eligibilityFinancial" value={formData.eligibilityFinancial} onChange={handleRichChange} placeholder="Turnover, net worth, similar work value requirements..." />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold ml-1">Eligibility — Technical</label>
-              <textarea name="eligibilityTechnical" value={formData.eligibilityTechnical} onChange={handleChange} placeholder="Qualification, machinery, experience requirements..." className={textareaClass} />
+              <RichTextEditor name="eligibilityTechnical" value={formData.eligibilityTechnical} onChange={handleRichChange} placeholder="Qualification, machinery, experience requirements..." />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-semibold ml-1">Eligibility — JV / Consortium</label>
-              <textarea name="eligibilityJV" value={formData.eligibilityJV} onChange={handleChange} placeholder="Joint venture / consortium participation rules..." className={textareaClass} />
+              <RichTextEditor name="eligibilityJV" value={formData.eligibilityJV} onChange={handleRichChange} placeholder="Joint venture / consortium participation rules..." />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold ml-1">Technical Analysis</label>
-              <textarea name="technicalAnalysis" value={formData.technicalAnalysis} onChange={handleChange} placeholder="Technical feasibility, methodology, specifications, risks..." className={textareaClass} />
+              <RichTextEditor name="technicalAnalysis" value={formData.technicalAnalysis} onChange={handleRichChange} placeholder="Technical feasibility, methodology, specifications, risks..." />
             </div>
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-semibold ml-1">BOQ / Price Schedule Summary</label>
-            <textarea name="boqSummary" value={formData.boqSummary} onChange={handleChange} placeholder="Key items, rates, quantities, and price schedule highlights..." className={textareaClass} />
+            <RichTextEditor name="boqSummary" value={formData.boqSummary} onChange={handleRichChange} placeholder="Key items, rates, quantities, and price schedule highlights..." />
           </div>
         </section>
 

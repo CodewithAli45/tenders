@@ -323,7 +323,6 @@ export default function Home() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25, ease: "easeOut" }}
                     onClick={() => setSelectedTender(tender)}
-                    whileHover={{ scale: 1.005 }}
                     className="group relative cursor-pointer px-4 py-3 hover:bg-muted/40 transition-colors border-l-[3px] border-l-transparent hover:border-l-primary"
                   >
                     {/* Row 1: ID left · Due date + status right */}
