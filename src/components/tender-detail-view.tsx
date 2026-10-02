@@ -258,7 +258,7 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
   return (
     <div className="h-full flex flex-col bg-background/50 backdrop-blur-xl">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-border flex items-start justify-between gap-3">
+      <div className="px-3 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-border flex items-start justify-between gap-3 sm:px-4 sm:py-3">
         <div className="flex items-start gap-2.5 min-w-0">
           <div className="h-9 w-9 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center mt-0.5">
             <FileText className="h-5 w-5 text-primary" />
@@ -277,12 +277,12 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
             </div>
           </div>
         </div>
-        <button onClick={onClose} className="h-9 w-9 shrink-0 border border-border rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer" aria-label="Close">
+        <button onClick={onClose} className="h-11 w-11 sm:h-9 sm:w-9 shrink-0 border border-border rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer" aria-label="Close">
           <X className="h-4.5 w-4.5" />
         </button>
       </div>
 
-      <div className="relative flex-1 overflow-y-auto px-4 pb-4 pt-0 lg:px-6 space-y-5 scrollbar-hide">
+      <div className="relative flex-1 overflow-y-auto px-3 pb-4 pt-0 sm:px-4 lg:px-6 space-y-5 scrollbar-hide">
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 text-destructive p-3 rounded-xl flex items-center gap-3">
             <AlertCircle className="h-5 w-5 flex-shrink-0" />
@@ -296,10 +296,10 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
           </div>
         )}
 
-        <nav aria-label="Tender detail sections" className="sticky top-0 z-20 -mx-4 border-y border-border bg-background px-4 py-2 sm:-mx-6 sm:px-6">
+        <nav aria-label="Tender detail sections" className="sticky top-0 z-20 -mx-3 border-y border-border bg-background px-3 py-2 sm:-mx-6 sm:px-6">
           <div className="flex gap-1 overflow-x-auto scrollbar-hide">
             {[['overview', 'Overview'], ['tender-information', 'Tender info'], ['authority-contact', 'Contact'], ['eligibility', 'Eligibility'], ['commercial', 'Commercial'], ['scope', 'Scope'], ['boq', 'BOQ'], ['documents', 'Documents']].map(([id, label]) => (
-              <button key={id} type="button" onClick={() => jumpToSection(id)} className="shrink-0 rounded-lg px-3 py-2 text-xs font-bold text-muted-foreground transition hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Jump to ${label}`}>
+              <button key={id} type="button" onClick={() => jumpToSection(id)} className="min-h-11 shrink-0 rounded-lg px-3 py-2 text-xs font-bold text-muted-foreground transition hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Jump to ${label}`}>
                 {label}
               </button>
             ))}
@@ -307,7 +307,7 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
         </nav>
 
         <section id="overview" className="scroll-mt-24 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-primary/[0.07] shadow-sm">
-          <div className="p-4 sm:p-6">
+          <div className="p-3 sm:p-6">
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground">
               <span className="rounded-md bg-primary/10 px-2 py-1 font-mono text-primary">{formData.internalId}</span>
               <span>{formData.organization || "Organisation not specified"}</span>
@@ -456,8 +456,8 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
 
       {/* Footer */}
       {!readOnly && (
-        <div className="px-4 py-3 border-t border-border bg-background/50 backdrop-blur-md flex">
-          <button onClick={() => setShowVerifyPrompt(true)} className="w-full h-10 bg-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer">
+        <div className="px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 border-t border-border bg-background/90 backdrop-blur-md flex sm:px-4 sm:py-3">
+          <button onClick={() => setShowVerifyPrompt(true)} className="w-full min-h-11 bg-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer">
             <Save className="h-4 w-4" />
             Save &amp; Verify
           </button>
@@ -466,8 +466,8 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
 
       <AnimatePresence>
         {showVerifyPrompt && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 rounded-3xl">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-background max-w-sm w-full p-8 rounded-3xl shadow-2xl space-y-6 text-center">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 sm:rounded-3xl">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-background max-w-sm w-full p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl space-y-5 sm:space-y-6 text-center">
               <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                 <CheckCircle2 className="h-8 w-8 text-primary" />
               </div>
@@ -477,9 +477,9 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
                   Please review the details for tender <strong>{tender.internalId}</strong>. Are you sure you want to save these changes?
                 </p>
               </div>
-              <div className="flex gap-4">
-                <button onClick={() => setShowVerifyPrompt(false)} className="flex-1 h-11 rounded-xl text-sm font-bold border border-border hover:bg-black/5 transition-all">Edit More</button>
-                <button onClick={handleSave} disabled={isSubmitting} className="flex-1 h-11 bg-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.05] transition-all flex items-center justify-center">
+              <div className="flex gap-2 sm:gap-4">
+                <button onClick={() => setShowVerifyPrompt(false)} className="flex-1 min-h-11 rounded-xl text-xs sm:text-sm font-bold border border-border hover:bg-black/5 transition-all">Edit More</button>
+                <button onClick={handleSave} disabled={isSubmitting} className="flex-1 min-h-11 bg-primary text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.05] transition-all flex items-center justify-center">
                   {isSubmitting ? <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : "Confirm Save"}
                 </button>
               </div>
@@ -508,7 +508,7 @@ function FileList({ files, label, canDelete, deleting, pendingDelete, onDelete }
           <div key={url} className={`flex items-center justify-between gap-2 p-3 rounded-xl border transition-all ${isPending ? "border-destructive/40 bg-destructive/5" : "border-primary/10 bg-primary/5"}`}>
             <div className="flex items-center gap-3 min-w-0">
               <Paperclip className="h-4 w-4 text-primary shrink-0" />
-              <span className="text-xs font-medium truncate max-w-[220px]">{label}_{idx + 1}.pdf</span>
+              <span className="min-w-0 flex-1 truncate text-xs font-medium sm:flex-initial sm:max-w-[220px]">{label}_{idx + 1}.pdf</span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <a href={url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-primary hover:underline cursor-pointer">VIEW</a>

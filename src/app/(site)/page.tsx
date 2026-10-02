@@ -155,10 +155,10 @@ export default function Home() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 md:p-6"
+            className="fixed inset-0 z-[120] flex items-center justify-center p-0 sm:p-4 md:p-6"
           >
             <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-md" onClick={() => setSelectedTender(null)} />
-            <div className="relative w-full h-full max-w-[98%] max-h-[92vh] glass-card shadow-2xl overflow-hidden rounded-3xl border border-border">
+            <div className="relative h-[100dvh] w-full max-h-[100dvh] overflow-hidden rounded-none border border-border bg-background shadow-2xl sm:h-full sm:max-h-[92vh] sm:max-w-[98%] sm:rounded-3xl glass-card">
               <TenderDetailView
                 tender={selectedTender}
                 onClose={() => setSelectedTender(null)}
