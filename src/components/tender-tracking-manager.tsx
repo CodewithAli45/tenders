@@ -31,6 +31,8 @@ type TrackingRecord = {
   bidders: Bidder[];
 };
 
+type BidderDraft = { bidderName: string; technicalStatus: string; quotedRate: string; financialRank: string; notes: string };
+
 const stages = [
   ["awaiting_bid_opening", "Awaiting bid opening"],
   ["technical_evaluation", "Technical evaluation"],
@@ -69,6 +71,8 @@ export function TenderTrackingManager({ tenders }: { tenders: TenderOption[] }) 
   const [tenderToAdd, setTenderToAdd] = useState("");
   const [notesDraft, setNotesDraft] = useState("");
   const [editingBidder, setEditingBidder] = useState<Bidder | null | undefined>(undefined);
+  const [bidderSaveRequest, setBidderSaveRequest] = useState<{ values: BidderDraft; bidder?: Bidder } | null>(null);
+  const [notice, setNotice] = useState("");
 
   const refresh = useCallback(async (preferredId: string | null = null) => {
     setLoading(true);
@@ -157,6 +161,8 @@ export function TenderTrackingManager({ tenders }: { tenders: TenderOption[] }) 
       if (bidder) await axios.patch(`/api/admin/tender-tracking/bidders/${bidder.id}`, payload);
       else await axios.post(`/api/admin/tender-tracking/${selected.id}/bidders`, payload);
       setEditingBidder(undefined);
+      setBidderSaveRequest(null);
+      setNotice("Bidder details saved and published to the public Status Tracker.");
       await refresh(selected.id);
     } catch (reason) {
       setError(axios.isAxiosError(reason) ? reason.response?.data?.error || "Could not save bidder details." : "Could not save bidder details.");
@@ -210,6 +216,7 @@ export function TenderTrackingManager({ tenders }: { tenders: TenderOption[] }) 
           )}
 
           {error && <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">{error}</p>}
+          {notice && <p role="status" className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-sm font-medium text-accent">{notice}</p>}
 
           <div className="grid min-h-[32rem] grid-cols-1 gap-4 xl:grid-cols-[minmax(18rem,0.85fr)_minmax(0,1.6fr)]">
             <section className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -281,14 +288,14 @@ export function TenderTrackingManager({ tenders }: { tenders: TenderOption[] }) 
 
                 <div className="rounded-2xl border border-border bg-card">
                   <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                    <div><h4 className="font-bold">Bidders & quoted rates</h4><p className="mt-0.5 text-xs text-muted-foreground">Visible to admins only.</p></div>
+                    <div><h4 className="font-bold">Bidders & quoted rates</h4><p className="mt-0.5 text-xs text-muted-foreground">Saved bidder results appear on the public Status Tracker.</p></div>
                     {editingBidder === undefined && <button type="button" onClick={() => setEditingBidder(null)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white"><Plus className="h-3.5 w-3.5" /> Add bidder</button>}
                   </div>
                   <div className="space-y-3 p-4">
-                    {editingBidder === null && <BidderEditor saving={saving} onCancel={() => setEditingBidder(undefined)} onSave={(values) => void saveBidder(values)} />}
+                    {editingBidder === null && <BidderEditor saving={saving} onCancel={() => setEditingBidder(undefined)} onRequestSave={(values) => { setError(""); setNotice(""); setBidderSaveRequest({ values }); }} />}
                     {selected.bidders.length === 0 && editingBidder !== null && <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">No bidders recorded yet.</p>}
                     {selected.bidders.map((bidder) => editingBidder?.id === bidder.id ? (
-                      <BidderEditor key={bidder.id} bidder={bidder} saving={saving} onCancel={() => setEditingBidder(undefined)} onSave={(values) => void saveBidder(values, bidder)} />
+                      <BidderEditor key={bidder.id} bidder={bidder} saving={saving} onCancel={() => setEditingBidder(undefined)} onRequestSave={(values) => { setError(""); setNotice(""); setBidderSaveRequest({ values, bidder }); }} />
                     ) : (
                       <article key={bidder.id} className="rounded-xl border border-border bg-background/50 p-3.5">
                         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -308,6 +315,16 @@ export function TenderTrackingManager({ tenders }: { tenders: TenderOption[] }) 
           </div>
         </div>
       </div>
+      {bidderSaveRequest && (
+        <div className="fixed inset-0 z-[150] grid place-items-center bg-black/55 p-4 backdrop-blur-sm" role="presentation">
+          <section role="dialog" aria-modal="true" aria-labelledby="bidder-save-title" className="w-full max-w-md space-y-5 rounded-2xl border border-border bg-background p-6 shadow-2xl">
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary"><Save className="h-5 w-5" /></div>
+            <div className="text-center"><h2 id="bidder-save-title" className="text-lg font-bold">Save bidder details?</h2><p className="mt-2 text-sm text-muted-foreground">{bidderSaveRequest.bidder ? "Your changes" : "This bidder"} will appear on the public Status Tracker with the technical result, quoted rate, and rank. Internal notes stay private.</p></div>
+            {error && <p role="alert" className="rounded-lg bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p>}
+            <div className="flex gap-3"><button type="button" onClick={() => { setBidderSaveRequest(null); setError(""); }} disabled={saving} className="h-10 flex-1 rounded-lg border border-border text-sm font-bold disabled:opacity-50">Continue editing</button><button type="button" onClick={() => void saveBidder(bidderSaveRequest.values, bidderSaveRequest.bidder)} disabled={saving} className="h-10 flex-1 rounded-lg bg-primary text-sm font-bold text-white disabled:opacity-50">{saving ? "Saving…" : "Save and publish"}</button></div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
@@ -316,10 +333,10 @@ function SummaryItem({ icon: Icon, label, value }: { icon: LucideIcon; label: st
   return <div className="min-w-0 rounded-lg border border-border bg-background/60 px-3 py-2"><p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"><Icon className="h-3 w-3 text-primary" />{label}</p><p className="mt-1 truncate text-sm font-bold" title={value}>{value}</p></div>;
 }
 
-function BidderEditor({ bidder, saving, onSave, onCancel }: {
+function BidderEditor({ bidder, saving, onRequestSave, onCancel }: {
   bidder?: Bidder;
   saving: boolean;
-  onSave: (values: { bidderName: string; technicalStatus: string; quotedRate: string; financialRank: string; notes: string }) => void;
+  onRequestSave: (values: BidderDraft) => void;
   onCancel: () => void;
 }) {
   const [bidderName, setBidderName] = useState(bidder?.bidder_name ?? "");
@@ -329,7 +346,7 @@ function BidderEditor({ bidder, saving, onSave, onCancel }: {
   const [notes, setNotes] = useState(bidder?.notes ?? "");
   const inputClass = "h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary";
   return (
-    <form onSubmit={(event) => { event.preventDefault(); onSave({ bidderName, technicalStatus, quotedRate, financialRank, notes }); }} className="space-y-3 rounded-xl border border-primary/20 bg-primary/[0.03] p-3.5">
+    <form onSubmit={(event) => { event.preventDefault(); onRequestSave({ bidderName, technicalStatus, quotedRate, financialRank, notes }); }} className="space-y-3 rounded-xl border border-primary/20 bg-primary/[0.03] p-3.5">
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="space-y-1 text-xs font-semibold text-muted-foreground">Bidder / contractor name<input required value={bidderName} onChange={(event) => setBidderName(event.target.value)} className={inputClass} /></label>
         <label className="space-y-1 text-xs font-semibold text-muted-foreground">Technical result<select value={technicalStatus} onChange={(event) => setTechnicalStatus(event.target.value)} className={inputClass}>{technicalStatuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
@@ -337,7 +354,7 @@ function BidderEditor({ bidder, saving, onSave, onCancel }: {
         <label className="space-y-1 text-xs font-semibold text-muted-foreground">Financial rank<input type="number" min="1" step="1" value={financialRank} onChange={(event) => setFinancialRank(event.target.value)} className={inputClass} placeholder="Optional" /></label>
       </div>
       <label className="block space-y-1 text-xs font-semibold text-muted-foreground">Notes<textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-normal text-foreground outline-none focus:border-primary" /></label>
-      <div className="flex justify-end gap-2"><button type="button" onClick={onCancel} className="rounded-lg border border-border px-3 py-2 text-xs font-bold">Cancel</button><button type="submit" disabled={!bidderName.trim() || saving} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white disabled:opacity-50"><Check className="h-3.5 w-3.5" />{saving ? "Saving…" : bidder ? "Save bidder" : "Add bidder"}</button></div>
+      <div className="flex justify-end gap-2"><button type="button" onClick={onCancel} className="rounded-lg border border-border px-3 py-2 text-xs font-bold">Cancel</button><button type="submit" disabled={!bidderName.trim() || saving} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white disabled:opacity-50"><Check className="h-3.5 w-3.5" />Continue to save</button></div>
     </form>
   );
 }

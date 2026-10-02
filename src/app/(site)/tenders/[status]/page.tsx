@@ -1,11 +1,11 @@
 import { Gavel } from "lucide-react";
-import { redirect } from "next/navigation";
+import { PublicTenderTracker } from "@/components/public-tender-tracker";
 
 const budgetValues = [3.5, 7.2, 1.8];
 
 export default async function TenderPage({ params }: { params: Promise<{ status: string }> }) {
   const { status } = await params;
-  if (status === "status") redirect("/admin?section=tracking");
+  if (status === "status") return <PublicTenderTracker />;
   const statusName = status.charAt(0).toUpperCase() + status.slice(1);
 
   return (

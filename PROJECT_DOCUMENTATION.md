@@ -45,7 +45,7 @@ The application is a Progressive Web App (PWA) and includes a separate, entirely
 │   │   ├── admin/                      # Protected admin screen and login
 │   │   ├── api/                        # Route handlers (backend API)
 │   │   ├── pdf-manager/page.tsx        # Browser-only PDF tool
-│   │   ├── tenders/[status]/page.tsx   # Routes status tracking to the protected admin workflow
+│   │   ├── tenders/[status]/page.tsx   # Public status results and other status routes
 │   │   ├── services/[service]/page.tsx # Service route template
 │   │   └── tools/[tool]/page.tsx       # Tool route placeholder
 │   ├── components/                     # Dashboard/forms/detail view/PWA register
@@ -112,7 +112,7 @@ All Supabase calls are made by server-side Next.js code using `SUPABASE_SERVICE_
 | `/admin` | Protected management dashboard. | Functional |
 | `/admin/login` | First-run setup and password login. | Functional |
 | `/tender-document-tools` | Client-side PDF merge, split, and page-arrange utility. | Functional |
-| `/tenders/status` | Admin post-bid tracker. | Protected workflow for evaluation stages and bidder results |
+| `/tenders/status` | Public post-bid results. | Displays saved bidder outcomes and rates; admin manages records in `/admin` |
 | `/tenders/[status]` | Other status routes. | Award/cancel routes remain placeholders |
 | `/services/[service]` | Generic service landing page. | Template/static; CTA has no submission logic |
 | `/tools/[tool]` | Generic tool landing page. | Placeholder |
@@ -153,6 +153,7 @@ The backend is implemented as Next.js Route Handlers under `src/app/api`. `src/l
 | Method and path | Auth | Purpose |
 | --- | --- | --- |
 | `GET /api/public/tenders` | Public | Lists tenders for the public dashboard. |
+| `GET /api/public/tender-tracking` | Public | Lists published tracker stages and bidder results; omits internal notes. |
 | `GET /api/tenders` | Admin | Lists tenders including attachment URLs. |
 | `POST /api/tenders` | Admin | Creates a tender. Requires the core fields listed below. |
 | `PATCH /api/tenders/:id` | Admin | Updates an existing tender by UUID. |
@@ -400,14 +401,14 @@ These are important distinctions between the present code and intended product s
 
 1. **Tender edit mapping is incomplete.** `PATCH /api/tenders/:id` writes only core fields (`title`, organization, values, IDs, and dates). It currently does not persist `scopeOfWork`, location, or contact fields when edited in `TenderDetailView`.
 2. **Public tender detail does not include attachments.** The public endpoint maps tender fields but does not map attachment rows, so public detail can show tender data but not document links returned by the server. Admin listing does include document URLs.
-3. **Status/service/tool pages are at different completion levels.** `/tenders/status` routes to the protected admin tracker; Awarded/Cancelled, services, and most tools remain informational placeholders. Only `/tender-document-tools` (formerly `/pdf-manager`) is a working standalone tool.
+3. **Status/service/tool pages are at different completion levels.** `/tenders/status` displays published bidder results; Awarded/Cancelled, services, and most tools remain informational placeholders. Only `/tender-document-tools` (formerly `/pdf-manager`) is a working standalone tool.
 4. **No delete endpoints/UI.** Tenders, organizations, and attachments can be created/read/updated but not deleted through the application.
 5. **No organization foreign key.** Tender organization names can become stale or differ from directory records because the relationship is text-only.
 6. **No server-side input normalization/validation beyond required presence.** The API does not validate numeric ranges, date ordering, email/phone format, or tender ID format. The database does enforce the unique tender internal ID and attachment type check.
 7. **Public attachments are deliberately public.** Anyone with a generated storage URL can access a file. Use private storage plus signed URLs if documents must be restricted.
 8. **The admin model is a single shared password.** There are no individual accounts, roles, password reset flow, rate limits, audit trail, or CSRF-specific protection beyond same-site cookie behavior.
 9. **`updated_at` is application-managed on updates.** The migrations set defaults but do not create a database trigger to update this timestamp automatically.
-10. **Tracker membership is independent from tender dates.** A `tender_tracking` row remains linked when the tender due date is extended; the current deadline badge is read from the tender record. Bidder and quoted-rate data is admin-only.
+10. **Tracker membership is independent from tender dates.** A `tender_tracking` row remains linked when the tender due date is extended; the current deadline badge is read from the tender record. Bidder outcomes and quoted rates are public; tracker administration and internal notes remain admin-only.
 
 ## 13. Recommended Operational Checklist
 
