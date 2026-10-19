@@ -90,6 +90,14 @@ export function SiteFooter() {
             <ul className="space-y-2.5 text-sm font-semibold text-muted-foreground">
               <li>
                 <Link
+                  href="/services/price-variation"
+                  className="hover:text-primary transition-colors"
+                >
+                  Price Variation
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/services/registration"
                   className="hover:text-primary transition-colors"
                 >
@@ -110,14 +118,6 @@ export function SiteFooter() {
                   className="hover:text-primary transition-colors"
                 >
                   Bid Preparation
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/services/contract-finalization"
-                  className="hover:text-primary transition-colors"
-                >
-                  Contract Finalization
                 </Link>
               </li>
               <li>

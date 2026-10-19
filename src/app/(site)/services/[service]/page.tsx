@@ -1,12 +1,14 @@
 import { ArrowLeft, Briefcase } from "lucide-react";
 import Link from "next/link";
+import { PriceVariationReferencePage } from "@/components/price-variation-reference";
 
 export default async function ServicePage({ params }: { params: Promise<{ service: string }> }) {
   const { service } = await params;
+  if (service === "price-variation") return <PriceVariationReferencePage />;
   const serviceName = service.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
   return (
-    <div className="min-h-screen bg-background p-[2%] pt-32">
+    <div className="w-full p-[2%]">
       <div className="max-w-4xl mx-auto space-y-8">
         <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
           <ArrowLeft className="h-4 w-4" />

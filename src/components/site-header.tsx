@@ -114,7 +114,7 @@ export function SiteHeader() {
                 onMouseEnter={() => setActiveDropdown(item.label)}
                 onMouseLeave={() => setActiveDropdown(null)}
               >
-                <a
+                <Link
                   href={item.href}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
                     activeDropdown === item.label
@@ -130,7 +130,7 @@ export function SiteHeader() {
                       }`}
                     />
                   )}
-                </a>
+                </Link>
                 <AnimatePresence>
                   {item.dropdown && activeDropdown === item.label && (
                     <motion.div
@@ -148,7 +148,7 @@ export function SiteHeader() {
                         {item.dropdown.map((subItem) => {
                           const IconComponent = subItem.icon || FileText;
                           return (
-                            <a
+                            <Link
                               key={subItem.label}
                               href={subItem.href}
                               target={subItem.target}
@@ -169,7 +169,7 @@ export function SiteHeader() {
                                   </p>
                                 )}
                               </div>
-                            </a>
+                            </Link>
                           );
                         })}
                       </div>
