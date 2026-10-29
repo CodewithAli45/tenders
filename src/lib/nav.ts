@@ -1,25 +1,18 @@
 import {
   Activity,
-  AlertOctagon,
   AlertTriangle,
   Archive,
   Award,
   Calculator,
-  CheckSquare,
-  Clock,
-  DollarSign,
   FileSpreadsheet,
   FileText,
-  HelpCircle,
   History,
   Layers,
   PieChart,
-  ShieldCheck,
   Star,
-  TrendingUp,
-  Users,
   type LucideIcon,
 } from "lucide-react";
+import { serviceNavItems } from "@/lib/services";
 
 export interface NavSubItem {
   label: string;
@@ -53,23 +46,14 @@ export const navItems: NavItem[] = [
     dropdown: [
       { label: "Tender Document Tools", href: "/tender-document-tools", description: "Prepare your tender documents for portal submission", icon: FileText, target: "_blank" },
       { label: "Calculator", href: "/tools/calculator", description: "EMD & cost estimation toolkit", icon: Calculator },
-      { label: "AutoCAD Viewer", href: "/tools/autocad-viewer", description: "Preview DWG & blueprint files", icon: Layers },
+      { label: "AutoCAD Viewer", href: "/tools/autocad-viewer", description: "Preview DWG & blueprint files", icon: Layers, target: "_blank" },
       { label: "MS Excel", href: "/tools/ms-excel", description: "Export & process tender BOQs", icon: FileSpreadsheet },
     ],
   },
   {
     label: "Services",
     href: "/services",
-    dropdown: [
-      { label: "Price Variation", href: "/services/price-variation", description: "WPI & Escalation Calculations", icon: TrendingUp },
-      { label: "Registration", href: "/services/registration", description: "Vendor & Portal Registration", icon: ShieldCheck },
-      { label: "Cost Estimation", href: "/services/cost-estimation", description: "Precision BOQ & financial rates", icon: DollarSign },
-      { label: "Bid Preparation", href: "/services/bid-preparation", description: "Technical & Financial Bidding", icon: CheckSquare },
-      { label: "Reply of Clarification", href: "/services/reply-of-clarification", description: "Pre-bid Query Drafting", icon: HelpCircle },
-      { label: "Billing Schedule", href: "/services/billing-schedule", description: "RA Bill & Measurement Books", icon: Clock },
-      { label: "L2 Network", href: "/services/l2-network", description: "Sub-contractor & Vendor Connect", icon: Users },
-      { label: "Extra Claim", href: "/services/extra-claim", description: "Dispute & Deviation Filings", icon: AlertOctagon },
-    ],
+    dropdown: serviceNavItems,
   },
 ];
 

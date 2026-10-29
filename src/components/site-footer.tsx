@@ -1,6 +1,7 @@
 import { Mail, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { services } from "@/lib/services";
 
 export function SiteFooter() {
   return (
@@ -88,46 +89,16 @@ export function SiteFooter() {
               Our Services
             </h4>
             <ul className="space-y-2.5 text-sm font-semibold text-muted-foreground">
-              <li>
-                <Link
-                  href="/services/price-variation"
-                  className="hover:text-primary transition-colors"
-                >
-                  Price Variation
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/services/registration"
-                  className="hover:text-primary transition-colors"
-                >
-                  Vendor Registration
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/services/cost-estimation"
-                  className="hover:text-primary transition-colors"
-                >
-                  Cost Estimation
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/services/bid-preparation"
-                  className="hover:text-primary transition-colors"
-                >
-                  Bid Preparation
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/services/billing-schedule"
-                  className="hover:text-primary transition-colors"
-                >
-                  Billing Schedule
-                </Link>
-              </li>
+              {services.map((service) => (
+                <li key={service.slug}>
+                  <Link
+                    href={`/services/${service.slug}`}
+                    className="hover:text-primary transition-colors"
+                  >
+                    {service.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

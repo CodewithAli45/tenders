@@ -1,8 +1,10 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { AutoCadViewer } from "@/components/autocad-viewer";
 
 export default async function ToolPage({ params }: { params: Promise<{ tool: string }> }) {
   const { tool } = await params;
+  if (tool === "autocad-viewer") return <AutoCadViewer />;
   const toolName = tool.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
   return (

@@ -1,54 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 # GovTender Pro
 
-GovernTender Pro is a product of MASHREQ ENTERPRISES. © 2026 MASHREQ ENTERPRISES. All rights reserved.
+GovTender Pro is a full stack tender publishing and administration app built with Next.js, TypeScript, and Supabase. It includes a public tender portal, a protected admin area, tender and organization APIs, PDF upload/storage, post-bid tracking, browser-based PDF utilities, and PWA support.
 
-## Admin login setup
+## Requirements
 
-1. In your Supabase project's SQL Editor, run every file in [`supabase/migrations`](./supabase/migrations/) in filename order. This includes the admin, tender detail, and post-bid tracking schema.
-2. Add these values to `.env.local`. In Supabase **Settings → API**, use the server-only **Secret key** (`sb_secret_…`), or the legacy `service_role` key. Do not use a Publishable (`sb_publishable_…`) or anon key:
+- Node.js (compatible with Next.js 16)
+- npm
+- A Supabase project
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-ADMIN_SESSION_SECRET=your-random-32-byte-secret
+Dependencies are declared in `package.json` and `package-lock.json`. After cloning, install them with `npm install` when you are ready to run the app.
+
+## Configure Supabase
+
+1. In the Supabase SQL Editor, run every SQL file in [`supabase/migrations`](./supabase/migrations/) in filename order. The migrations create the application tables, access policies, and tender attachment storage bucket.
+2. Copy [`.env.example`](./.env.example) to `.env.local` and fill in your Supabase project URL, server-only Secret key (or legacy `service_role` key), and a random session secret. Keep `.env.local` private and out of version control.
+3. Restart the app after changing environment variables.
+
+The Supabase key must be server-only. Do not use a Publishable (`sb_publishable_…`) or anon key for `SUPABASE_SERVICE_ROLE_KEY`.
+
+## Run locally
+
+```bash
+npm install
+npm run dev
 ```
 
-3. Restart the app and visit `/admin`. On the first visit, create and confirm the admin password. It is then stored as a salted scrypt hash in Supabase. The admin session lasts 12 hours and is stored in an HTTP-only cookie.
+Open [http://localhost:3000](http://localhost:3000). Visit `/admin` to set the initial administrator password after the database migrations and environment variables are configured. The password is stored as a salted scrypt hash, and the admin session uses an HTTP-only cookie.
 
-The migration enables RLS and prevents browser roles from reading password data. Password verification runs only through the server with Supabase's service-role key.
+## Main areas
+
+- `/` — public tender dashboard
+- `/admin` — protected tender, organization, and post-bid management
+- `/tender-document-tools` — browser-based PDF merge, split, arrange, and compression tools
+- `/about`, `/tenders/[status]`, `/services/[service]`, and `/tools/[tool]` — informational and supporting routes
+- `src/app/api` — public and admin API route handlers
+- `supabase/migrations` — ordered database schema and policy migrations
+
+See [PROJECT_DOCUMENTATION.md](./PROJECT_DOCUMENTATION.md) for the application architecture, API reference, schema, and operational notes.
+
+## Production
+
+Build and run the production server with:
+
+```bash
+npm run build
+npm start
+```
