@@ -2,6 +2,9 @@ import { ArrowLeft, ArrowUpRight, Briefcase, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PriceVariationReferencePage } from "@/components/price-variation-reference";
+import { RegistrationServicePage } from "@/components/registration-service-page";
+import { BidPreparationServicePage } from "@/components/bid-preparation-service-page";
+import { ClarificationSubmissionServicePage } from "@/components/clarification-submission-service-page";
 import { getService, services } from "@/lib/services";
 
 export function generateStaticParams() {
@@ -10,6 +13,27 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ service: string }> }) {
   const { service } = await params;
+  if (service === "registration") {
+    return {
+      title: "Government Tender Portal Registration | GovTender Pro",
+      description:
+        "Practical assistance to identify the correct government portal, prepare business details and documents, and complete vendor registration for Indian government tenders.",
+    };
+  }
+  if (service === "bid-preparation") {
+    return {
+      title: "Bid Preparation | GovTender Pro",
+      description:
+        "Tender document preparation and compliance support for Indian contractors: clause-wise review, technical bid, annexures, financial BOQ, commercial checks, and a final submission checklist.",
+    };
+  }
+  if (service === "clarification-submission") {
+    return {
+      title: "Clarification Submission | GovTender Pro",
+      description:
+        "Clause-specific pre-bid clarifications for Indian government tenders: review of tender conditions, specifications and BOQ items, query drafting, and a submission-ready clarification schedule.",
+    };
+  }
   const detail = getService(service);
   if (!detail) return { title: "Service not found | GovTender Pro" };
   return {
@@ -21,6 +45,9 @@ export async function generateMetadata({ params }: { params: Promise<{ service: 
 export default async function ServicePage({ params }: { params: Promise<{ service: string }> }) {
   const { service } = await params;
   if (service === "price-variation") return <PriceVariationReferencePage />;
+  if (service === "registration") return <RegistrationServicePage />;
+  if (service === "bid-preparation") return <BidPreparationServicePage />;
+  if (service === "clarification-submission") return <ClarificationSubmissionServicePage />;
 
   const detail = getService(service);
   if (!detail) notFound();

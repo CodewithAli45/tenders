@@ -39,12 +39,12 @@ export const services: ServiceDetail[] = [
     description: "Vendor & portal registration",
     icon: ShieldCheck,
     summary:
-      "Get registered as a vendor on government procurement portals with the right class, categories, and supporting documents so your bids are never rejected on eligibility grounds.",
+      "Practical assistance preparing your business profile and completing vendor enrolment on the relevant government procurement portal. Requirements and approval depend on the portal, buyer, and your business.",
     includes: [
       "Portal and vendor enrolment",
-      "Class and category selection",
-      "Document checklist review",
-      "Renewal and profile updates",
+      "Portal-specific onboarding guidance",
+      "Business profile and document review",
+      "Category, renewal, and profile update support",
     ],
   },
   {
@@ -53,12 +53,12 @@ export const services: ServiceDetail[] = [
     description: "Technical & financial bidding",
     icon: CheckSquare,
     summary:
-      "Prepare complete technical and financial bids that answer every clause of the tender document, from EMD and eligibility papers to BOQ rates and submission formalities.",
+      "Prepare a complete tender submission from the notice, bidding documents, eligibility criteria, prescribed annexures, and submission instructions, with every requirement checked against the tender conditions.",
     includes: [
-      "Tender document review",
-      "Technical bid compilation",
-      "Financial bid and BOQ rates",
-      "Submission compliance check",
+      "Tender document and clause review",
+      "Technical bid and annexure preparation",
+      "Financial bid and BOQ review",
+      "Submission compliance and final checklist",
     ],
   },
   {
@@ -67,12 +67,12 @@ export const services: ServiceDetail[] = [
     description: "Pre-bid query drafting",
     icon: HelpCircle,
     summary:
-      "Draft and submit pre-bid and post-bid clarifications that protect your commercial position while keeping the response precise, referenced, and within the query deadline.",
+      "Prepare clear, clause-specific queries on tender conditions, technical specifications, BOQ items, and commercial requirements, and assemble them into the prescribed clarification schedule before the deadline.",
     includes: [
-      "Pre-bid query drafting",
-      "Clause and drawing references",
-      "Deadline and format compliance",
-      "Reply tracking and follow-up",
+      "Tender clause and BOQ review",
+      "Clause-referenced query drafting",
+      "Clarification schedule preparation",
+      "Deadline and submission instruction checks",
     ],
   },
   {
