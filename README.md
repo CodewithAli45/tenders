@@ -7,6 +7,7 @@ GovTender Pro is a full stack tender publishing and administration app built wit
 - Node.js (compatible with Next.js 16)
 - npm
 - A Supabase project
+- Optional: a Google Cloud service account with the Google Sheets API enabled, for the admin Google Sheets sync
 
 Dependencies are declared in `package.json` and `package-lock.json`. After cloning, install them with `npm install` when you are ready to run the app.
 
@@ -17,6 +18,15 @@ Dependencies are declared in `package.json` and `package-lock.json`. After cloni
 3. Restart the app after changing environment variables.
 
 The Supabase key must be server-only. Do not use a Publishable (`sb_publishable_…`) or anon key for `SUPABASE_SERVICE_ROLE_KEY`.
+
+## Configure Google Sheets sync (optional)
+
+1. Enable the Google Sheets API in the Google Cloud project that owns the service account, then create a service-account JSON key.
+2. Share the target spreadsheet with the service-account email as **Editor**. The sheet can stay private.
+3. Set server-only `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY` (the full key, with escaped `\n` newlines if it is one line), and `GOOGLE_SHEET_ID` in `.env.local` or the host environment. Never use a `NEXT_PUBLIC_` prefix.
+4. Restart the app, open `/admin`, and select **Google Sheets**. Add the private key only in environment settings; never paste it into chat or client code.
+
+`supabase/migrations/20261030000000_google_sheets_sync.sql` creates the sync history/lock table. The Google Sheets section reports a clear setup message until it, the private key, and the spreadsheet sharing are in place.
 
 ## Run locally
 
@@ -30,7 +40,7 @@ Open [http://localhost:3000](http://localhost:3000). Visit `/admin` to set the i
 ## Main areas
 
 - `/` — public tender dashboard
-- `/admin` — protected tender, organization, and post-bid management
+- `/admin` — protected tender, organization, post-bid, and Google Sheets sync management
 - `/tender-document-tools` — browser-based PDF merge, split, arrange, and compression tools
 - `/about`, `/tenders/[status]`, `/services/[service]`, and `/tools/[tool]` — informational and supporting routes
 - `src/app/api` — public and admin API route handlers
