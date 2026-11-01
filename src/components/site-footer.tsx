@@ -5,7 +5,7 @@ import { services } from "@/lib/services";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-12 border-t border-border bg-card/40 xl:ml-70">
+    <footer className="mt-12 border-t border-border bg-card/40">
       <div className="w-full px-[4%] md:px-[6%] py-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           <div className="space-y-3">
@@ -74,11 +74,6 @@ export function SiteFooter() {
               <li>
                 <Link href="/about" className="hover:text-primary transition-colors">
                   About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin" className="hover:text-primary transition-colors">
-                  Admin Portal
                 </Link>
               </li>
             </ul>

@@ -309,3 +309,27 @@ button,
 .rich-text-surface .tiptap .tableWrapper {
   overflow-x: auto;
 }
+
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .site-announcement-bar {
+    display: none;
+  }
+
+  .site-nav {
+    top: env(safe-area-inset-top);
+  }
+
+  .site-main-layout {
+    padding-top: calc(4rem + env(safe-area-inset-top));
+  }
+
+  .site-search-desktop,
+  .site-search-toggle,
+  .site-search-panel {
+    display: none !important;
+  }
+
+  .site-mobile-drawer {
+    top: calc(4rem + env(safe-area-inset-top));
+  }
+}

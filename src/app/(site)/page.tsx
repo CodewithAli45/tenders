@@ -9,14 +9,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  Filter,
   Layers,
+  Megaphone,
+  Newspaper,
   Radio,
-  Search,
-  X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { TenderDetailView } from "@/components/tender-detail-view";
+import { useSiteSearch } from "@/components/site-search-context";
 
 interface Tender {
   _id: string;
@@ -88,11 +88,9 @@ const getAvatarInitial = (name: string) => {
 
 export default function Home() {
   const [selectedTender, setSelectedTender] = useState<Tender | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterBy, setFilterBy] = useState("DueDate");
+  const { searchQuery } = useSiteSearch();
   const [statusFilter, setStatusFilter] = useState<"all" | TenderStatus>("all");
   const [orgFilter, setOrgFilter] = useState<string | null>(null);
-  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [orgMenuOpen, setOrgMenuOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -110,7 +108,6 @@ export default function Home() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
-        setFilterMenuOpen(false);
         setOrgMenuOpen(false);
       }
     };
@@ -122,23 +119,31 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   const organizations = Array.from(new Set(tenders.map((t) => t.organization).filter(Boolean))).sort();
 
-  const filteredTenders = tenders.filter((t) => {
+  const matchingTenders = tenders.filter((t) => {
     const matchesSearch = !searchQuery ||
       t.internalId.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.tenderNo?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesOrg = !orgFilter || t.organization === orgFilter;
+    return matchesSearch && matchesOrg;
+  });
+
+  const filteredTenders = matchingTenders.filter((t) => {
     const matchesStatus = statusFilter === "all" || getTenderStatus(t.dueDate) === statusFilter;
-    return matchesSearch && matchesOrg && matchesStatus;
+    return matchesStatus;
   });
 
   const sortedTenders = [...filteredTenders].sort((a, b) => {
-    if (filterBy === "HighValue") return (b.tenderValue || 0) - (a.tenderValue || 0);
-    if (filterBy === "Organization") return a.organization.localeCompare(b.organization);
-    return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
+    const aCreatedAt = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const bCreatedAt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return bCreatedAt - aCreatedAt;
   });
 
   const PER_PAGE = 10;
@@ -170,112 +175,12 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-        <div className="w-full space-y-4">
-
-          {/* Search & Sort Bar */}
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-            <div className="hidden w-full md:block md:w-[28rem]">
-              <div className="relative flex items-center">
-                <Search className="absolute left-3.5 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                  placeholder="Search by ID, title, organization..."
-                  className="h-11 w-full rounded-xl bg-secondary pl-10 pr-10 text-sm font-semibold border border-border outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
-                {searchQuery && (
-                  <button onClick={() => setSearchQuery("")} className="absolute right-3 p-1 rounded-full hover:bg-card text-muted-foreground">
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="relative hidden md:block" ref={filterRef}>
-              <button
-                onClick={() => setFilterMenuOpen(!filterMenuOpen)}
-                className="flex h-11 items-center gap-2 rounded-xl bg-secondary px-4 text-sm font-semibold border border-border outline-none hover:border-primary transition-all cursor-pointer text-foreground"
-              >
-                <Filter className="h-4 w-4" />
-                <span>{filterBy === "DueDate" ? "Newest" : filterBy === "HighValue" ? "High Value" : "Organization"}</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${filterMenuOpen ? "rotate-180" : ""}`} />
-              </button>
-
-              <AnimatePresence>
-                {filterMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                    className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-card border border-border shadow-2xl p-2 z-[100]"
-                  >
-                    <button
-                      onClick={() => { setFilterBy("DueDate"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); setOrgMenuOpen(false); }}
-                      className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold transition ${filterBy === "DueDate" ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
-                    >
-                      Due Date (Newest) <span className="text-[10px] text-muted-foreground font-bold">Default</span>
-                    </button>
-                    <button
-                      onClick={() => { setFilterBy("HighValue"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); setOrgMenuOpen(false); }}
-                      className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold transition ${filterBy === "HighValue" ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
-                    >
-                      High Value
-                      {filterBy === "HighValue" && <Check className="h-4 w-4 text-primary" />}
-                    </button>
-
-                    <div className="relative">
-                      <button
-                        onClick={() => setOrgMenuOpen(!orgMenuOpen)}
-                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold transition ${filterBy === "Organization" ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
-                      >
-                        Organization
-                        <ChevronDown className={`h-4 w-4 -rotate-90 transition-transform duration-200 ${orgMenuOpen ? "rotate-0" : ""}`} />
-                      </button>
-                      <AnimatePresence>
-                        {orgMenuOpen && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                            transition={{ duration: 0.15, ease: "easeOut" }}
-                            className="absolute right-0 top-full mt-1 w-full max-h-80 overflow-y-auto rounded-2xl bg-card border border-border shadow-2xl p-2 z-[110] sm:right-full sm:top-0 sm:mt-0 sm:mr-1.5 sm:w-60"
-                          >
-                            <button
-                              onClick={() => { setFilterBy("Organization"); setOrgFilter(null); setCurrentPage(1); setFilterMenuOpen(false); setOrgMenuOpen(false); }}
-                              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition hover:bg-muted cursor-pointer"
-                            >
-                              All Organizations
-                              {!orgFilter && filterBy === "Organization" && <Check className="h-4 w-4 text-primary" />}
-                            </button>
-                            {organizations.map((org) => (
-                              <button
-                                key={org}
-                                onClick={() => { setFilterBy("Organization"); setOrgFilter(org); setCurrentPage(1); setFilterMenuOpen(false); setOrgMenuOpen(false); }}
-                                className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm transition hover:bg-muted cursor-pointer"
-                              >
-                                <span className="truncate">{org}</span>
-                                {orgFilter === org && <Check className="h-4 w-4 text-primary flex-shrink-0" />}
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-          </div>
-
-          {/* Status Filter Tabs */}
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="mb-5 flex flex-wrap items-center gap-2" ref={filterRef}>
             {([
-              { key: "all", label: "All", icon: Layers, count: filteredTenders.length },
-              { key: "live", label: "Live", icon: Radio, count: tenders.filter((t) => getTenderStatus(t.dueDate) === "live").length },
-              { key: "closing", label: "Closing Soon", icon: Clock, count: tenders.filter((t) => getTenderStatus(t.dueDate) === "closing").length },
-              { key: "expired", label: "Expired", icon: Archive, count: tenders.filter((t) => getTenderStatus(t.dueDate) === "expired").length },
+              { key: "all", label: "All", icon: Layers, count: matchingTenders.length },
+              { key: "live", label: "Live", icon: Radio, count: matchingTenders.filter((t) => getTenderStatus(t.dueDate) === "live").length },
+              { key: "closing", label: "Closing Soon", icon: Clock, count: matchingTenders.filter((t) => getTenderStatus(t.dueDate) === "closing").length },
+              { key: "expired", label: "Expired", icon: Archive, count: matchingTenders.filter((t) => getTenderStatus(t.dueDate) === "expired").length },
             ] as const).map((tab) => (
               <button
                 key={tab.key}
@@ -295,8 +200,51 @@ export default function Home() {
                 </span>
               </button>
             ))}
-          </div>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setOrgMenuOpen((open) => !open)}
+                className={`flex min-h-8 max-w-56 items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-bold transition ${orgFilter ? "border-primary bg-primary text-white" : "border-border bg-card text-muted-foreground hover:border-primary hover:text-primary"}`}
+                aria-expanded={orgMenuOpen}
+              >
+                <span className="truncate">{orgFilter || "Organization"}</span>
+                <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${orgMenuOpen ? "rotate-180" : ""}`} />
+              </button>
+              <AnimatePresence>
+                {orgMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                    className="absolute left-0 top-full z-[110] mt-2 max-h-80 w-64 overflow-y-auto rounded-2xl border border-border bg-card p-2 shadow-2xl"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => { setOrgFilter(null); setCurrentPage(1); setOrgMenuOpen(false); }}
+                      className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold transition hover:bg-muted"
+                    >
+                      All Organizations
+                      {!orgFilter && <Check className="h-4 w-4 text-primary" />}
+                    </button>
+                    {organizations.map((org) => (
+                      <button
+                        type="button"
+                        key={org}
+                        onClick={() => { setOrgFilter(org); setCurrentPage(1); setOrgMenuOpen(false); }}
+                        className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm transition hover:bg-muted"
+                      >
+                        <span className="truncate">{org}</span>
+                        {orgFilter === org && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+        </div>
 
+        <div className="grid w-full grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+          <div className="min-w-0">
           {/* Tender List - Full Width Single Rows */}
           <section className="glass-card rounded-2xl border border-border overflow-hidden">
             <div className="divide-y divide-border">
@@ -432,6 +380,27 @@ export default function Home() {
             </div>
           )}
 
+          </div>
+
+        <aside aria-label="Advertising and news" className="flex flex-col gap-4">
+          <section className="rounded-2xl border border-border bg-card/70 p-3.5 shadow-sm">
+            <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              <Megaphone className="h-4 w-4 text-primary" /> AdSense
+            </h2>
+            <div className="mt-3 flex min-h-[210px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/30 p-4 text-center">
+              <p className="text-xs text-muted-foreground">Advertisement</p>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-border bg-card/70 p-3.5 shadow-sm">
+            <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              <Newspaper className="h-4 w-4 text-primary" /> News &amp; Updates
+            </h2>
+            <div className="mt-3 rounded-xl bg-muted/30 px-3 py-4 text-center">
+              <p className="text-xs text-muted-foreground">News updates coming soon</p>
+            </div>
+          </section>
+        </aside>
         </div>
     </>
   );

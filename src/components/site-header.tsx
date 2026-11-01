@@ -7,15 +7,17 @@ import {
   FileText,
   Menu,
   Phone,
-  Settings,
+  Search,
   Sparkles,
   X,
   MessageCircle
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { navItems } from "@/lib/nav";
+import { useSiteSearch } from "@/components/site-search-context";
 
 function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
@@ -56,9 +58,13 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
 }
 
 export function SiteHeader() {
+  const pathname = usePathname();
+  const { searchQuery, setSearchQuery } = useSiteSearch();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const showTenderSearch = pathname === "/";
 
   const closeMobile = () => {
     setMobileMenuOpen(false);
@@ -68,7 +74,7 @@ export function SiteHeader() {
   return (
     <>
       {/* Top Marketing & Announcement Bar */}
-      <div className="h-9 w-full bg-slate-900 dark:bg-slate-950 text-slate-100 flex items-center justify-between px-[2%] text-xs font-medium border-b border-slate-800 z-[60] fixed top-0">
+      <div className="site-announcement-bar h-9 w-full bg-slate-900 dark:bg-slate-950 text-slate-100 flex items-center justify-between px-[2%] text-xs font-medium border-b border-slate-800 z-[60] fixed top-0">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-primary/15 text-primary font-semibold border border-primary/30">
             <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
@@ -92,7 +98,7 @@ export function SiteHeader() {
       </div>
 
       {/* Main Navigation Bar */}
-      <nav className="fixed top-9 z-50 w-full border-b border-border/80 bg-card/90 backdrop-blur-xl shadow-xs">
+      <nav className="site-nav fixed top-9 z-50 w-full border-b border-border/80 bg-card/90 backdrop-blur-xl shadow-xs">
         <div className="flex h-16 w-full items-center justify-between px-[2%] gap-4">
           <button
             onClick={() => setMobileMenuOpen(true)}
@@ -105,6 +111,41 @@ export function SiteHeader() {
           <Link href="/" className="flex items-center gap-3 flex-shrink-0 group">
             <BrandMark />
           </Link>
+
+          {showTenderSearch && (
+            <>
+              <label className="site-search-desktop relative hidden min-w-0 flex-1 items-center md:flex xl:max-w-64">
+                <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search tenders..."
+                  aria-label="Search tenders"
+                  className="h-10 w-full rounded-xl border border-border bg-secondary pl-9 pr-9 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2 rounded-full p-1 text-muted-foreground hover:bg-card hover:text-foreground"
+                    aria-label="Clear tender search"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </label>
+              <button
+                type="button"
+                onClick={() => setMobileSearchOpen((open) => !open)}
+                className="site-search-toggle grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border text-muted-foreground hover:bg-secondary hover:text-foreground md:hidden"
+                aria-label={mobileSearchOpen ? "Close tender search" : "Open tender search"}
+                aria-expanded={mobileSearchOpen}
+              >
+                {mobileSearchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+              </button>
+            </>
+          )}
 
           <div className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => (
@@ -180,16 +221,23 @@ export function SiteHeader() {
             ))}
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin"
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold text-xs shadow-md hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-all cursor-pointer"
-            >
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Admin</span>
-            </Link>
-          </div>
         </div>
+        {showTenderSearch && mobileSearchOpen && (
+          <div className="site-search-panel absolute left-2 right-2 top-full rounded-xl border border-border bg-card p-3 shadow-xl md:hidden">
+            <label className="relative flex items-center">
+              <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search by ID, title, organization..."
+                aria-label="Search tenders"
+                autoFocus
+                className="h-11 w-full rounded-xl border border-border bg-secondary pl-10 pr-4 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </label>
+          </div>
+        )}
       </nav>
 
       {/* Mobile Left Sidebar Drawer */}
@@ -210,7 +258,7 @@ export function SiteHeader() {
         initial={{ x: "-100%" }}
         animate={{ x: mobileMenuOpen ? "0%" : "-100%" }}
         transition={{ type: "tween", duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
-        className="fixed top-9 bottom-0 left-0 z-[120] flex w-[85%] max-w-sm flex-col bg-card border-r border-border shadow-2xl lg:hidden overflow-y-auto"
+        className="site-mobile-drawer fixed top-9 bottom-0 left-0 z-[120] flex w-[85%] max-w-sm flex-col bg-card border-r border-border shadow-2xl lg:hidden overflow-y-auto"
         aria-hidden={!mobileMenuOpen}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
