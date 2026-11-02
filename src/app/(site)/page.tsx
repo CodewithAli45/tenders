@@ -93,7 +93,14 @@ export default function Home() {
   const [orgFilter, setOrgFilter] = useState<string | null>(null);
   const [orgMenuOpen, setOrgMenuOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [pageState, setPageState] = useState<{ query: string; page: number }>({ query: searchQuery, page: 1 });
+  const currentPage = pageState.query === searchQuery ? pageState.page : 1;
+  const setCurrentPage = (page: number | ((current: number) => number)) => {
+    setPageState((previous) => {
+      const base = previous.query === searchQuery ? previous.page : 1;
+      return { query: searchQuery, page: typeof page === "function" ? page(base) : page };
+    });
+  };
   const [tenders, setTenders] = useState<Tender[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -118,10 +125,6 @@ export default function Home() {
       document.removeEventListener("touchstart", handleClickOutside);
     };
   }, []);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
 
   const organizations = Array.from(new Set(tenders.map((t) => t.organization).filter(Boolean))).sort();
 

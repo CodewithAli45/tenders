@@ -106,7 +106,7 @@ export function AutoCadViewer() {
         ctx.strokeStyle = palette[drawing.layers.indexOf(e.layer) % palette.length]; ctx.lineWidth = 1.6; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.beginPath();
         if (e.kind === "line") { const a = project(e.points[0]); const b = project(e.points[1]); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); }
         else if (e.kind === "polyline") { e.points.forEach((point, i) => { const p = project(point); if (!i) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); }); if (e.closed) ctx.closePath(); }
-        else { const c = project(e.center); const r = Math.max(1, e.radius * scale); if (e.kind === "circle") ctx.arc(c.x, c.y, r, 0, Math.PI * 2); else { let start = e.start * Math.PI / 180; let end = e.end * Math.PI / 180; if (end < start) end += 2 * Math.PI; ctx.arc(c.x, c.y, r, -start, -end, true); } }
+        else { const c = project(e.center); const r = Math.max(1, e.radius * scale); if (e.kind === "circle") ctx.arc(c.x, c.y, r, 0, Math.PI * 2); else { const start = e.start * Math.PI / 180; let end = e.end * Math.PI / 180; if (end < start) end += 2 * Math.PI; ctx.arc(c.x, c.y, r, -start, -end, true); } }
         ctx.stroke();
       });
       const o = project({ x: 0, y: 0 });
@@ -119,7 +119,7 @@ export function AutoCadViewer() {
     draw(); const observer = new ResizeObserver(draw); observer.observe(stage); return () => observer.disconnect();
   }, [drawing, visible, zoom, pan, fitKey]);
 
-  const toggle = (layer: string) => setVisible(old => { const next = new Set(old); next.has(layer) ? next.delete(layer) : next.add(layer); return next; });
+  const toggle = (layer: string) => setVisible(old => { const next = new Set(old); if (next.has(layer)) next.delete(layer); else next.add(layer); return next; });
   const visibleCount = drawing?.layers.filter(layer => visible.has(layer)).length ?? 0;
 
   return <div className="mx-auto w-full max-w-[1600px] space-y-5 px-1 pb-8 md:px-3">
