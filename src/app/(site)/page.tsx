@@ -274,7 +274,7 @@ export default function Home() {
                     className="group relative cursor-pointer px-4 py-3 hover:bg-muted/40 transition-colors border-l-[3px] border-l-transparent hover:border-l-primary"
                   >
                     {/* Row 1: ID left · Due date + status right */}
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                       <div className="flex items-center gap-2">
                         <span className="px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-mono text-xs font-bold tracking-wide border border-primary/20">
                           {tender.internalId}
@@ -285,7 +285,7 @@ export default function Home() {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-2.5">
                         <span className="due-date-badge text-[11px] font-semibold text-muted-foreground whitespace-nowrap">
                           Due: <span className="font-bold text-foreground">{formatDate(tender.dueDate)}</span>
                         </span>
@@ -346,7 +346,7 @@ export default function Home() {
                 <span className="text-foreground font-bold">{Math.min(safePage * PER_PAGE, sortedTenders.length)}</span> of{" "}
                 <span className="text-foreground font-bold">{sortedTenders.length}</span> tenders
               </p>
-              <div className="flex items-center gap-1.5">
+              <div className="flex max-w-full flex-wrap items-center justify-center gap-1.5">
                 <button
                   onClick={() => setCurrentPage(Math.max(1, safePage - 1))}
                   disabled={safePage === 1}

@@ -30,7 +30,7 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
         className={
           compact
             ? "h-8 w-8 rounded-lg object-cover"
-            : "h-10 w-10 rounded-xl object-cover shadow-md shadow-[#b86b35]/30 group-hover:scale-105 transition-all"
+            : "h-9 w-9 rounded-xl object-cover shadow-md shadow-[#b86b35]/30 transition-all group-hover:scale-105 sm:h-10 sm:w-10"
         }
       />
       {compact ? (
@@ -48,7 +48,7 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
               Pro
             </span>
           </span>
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest -mt-0.5">
+          <span className="mt-0.5 hidden text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:block">
             PSU BIDDING INTELLIGENCE
           </span>
         </div>
@@ -258,7 +258,7 @@ export function SiteHeader() {
         initial={{ x: "-100%" }}
         animate={{ x: mobileMenuOpen ? "0%" : "-100%" }}
         transition={{ type: "tween", duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
-        className="site-mobile-drawer fixed top-9 bottom-0 left-0 z-[120] flex w-[85%] max-w-sm flex-col bg-card border-r border-border shadow-2xl lg:hidden overflow-y-auto"
+        className="site-mobile-drawer fixed top-9 bottom-0 left-0 z-[120] flex w-[85%] max-w-sm flex-col overflow-y-auto border-r border-border bg-card pb-[env(safe-area-inset-bottom)] shadow-2xl lg:hidden"
         aria-hidden={!mobileMenuOpen}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">

@@ -46,7 +46,7 @@ export function EnterpriseSidebar() {
   ];
 
   return (
-    <aside className="fixed left-[1%] top-28 hidden h-[calc(100vh-8rem)] w-64 flex-col border border-border rounded-2xl bg-card p-5 xl:flex shadow-xs overflow-y-auto">
+    <aside className="fixed left-[1%] top-[calc(7rem_+_env(safe-area-inset-top))] hidden h-[calc(100dvh_-_8rem_-_env(safe-area-inset-top))] w-64 flex-col overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-xs xl:flex">
       <div className="space-y-6">
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">

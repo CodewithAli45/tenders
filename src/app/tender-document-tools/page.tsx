@@ -386,9 +386,9 @@ export default function PDFManagerPage() {
   const [activeTab, setActiveTab] = useState<Operation>("merge");
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-dvh bg-background pb-[env(safe-area-inset-bottom)] text-foreground">
       {/* ---- Top navigation bar with back link, branding and operation tabs ---- */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between gap-3 h-16">
             {/* Left: back link + brand */}
@@ -405,14 +405,14 @@ export default function PDFManagerPage() {
               </div>
               <div className="min-w-0">
                 <p className="font-bold text-sm leading-tight">Tender Document Tools</p>
-                <p className="text-[10px] text-muted-foreground leading-tight truncate">
+                <p className="hidden text-[10px] leading-tight text-muted-foreground truncate sm:block">
                   Prepare your tender documents for portal submission
                 </p>
               </div>
             </div>
 
             {/* Right: operation tabs */}
-            <nav className="flex items-center gap-0.5 bg-muted/60 border border-border rounded-xl p-1 overflow-x-auto">
+            <nav className="flex min-w-0 shrink items-center gap-0.5 overflow-x-auto rounded-xl border border-border bg-muted/60 p-1">
               {([
                 { id: "merge" as Operation, label: "Merge", icon: Merge },
                 { id: "split" as Operation, label: "Split", icon: SplitSquareVertical },

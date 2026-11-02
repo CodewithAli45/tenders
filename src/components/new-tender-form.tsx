@@ -83,19 +83,19 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
 
   return (
     <div className="h-full flex flex-col bg-background/50 backdrop-blur-xl">
-      <div className="p-6 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-black/5 p-4 dark:border-white/10 sm:p-6">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <FileText className="h-5 w-5 text-primary" />
           </div>
-          <h2 className="text-xl font-bold">Add New Tender</h2>
+          <h2 className="text-lg font-bold sm:text-xl">Add New Tender</h2>
         </div>
         <button onClick={onClose} className="h-10 w-10 border border-black/5 dark:border-white/10 rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer">
           <X className="h-5 w-5" />
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
+      <form onSubmit={handleSubmit} className="flex-1 space-y-6 overflow-y-auto p-4 scrollbar-hide sm:space-y-8 sm:p-6 md:p-8">
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-xl flex items-center gap-3">
             <AlertCircle className="h-5 w-5 flex-shrink-0" />
@@ -109,7 +109,7 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
             <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">General Information</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-semibold ml-1">Our Tender ID (Auto-generated)</label>
               <input type="text" name="internalId" value={formData.internalId} disabled className={`${inputClass} font-mono text-primary cursor-not-allowed`} />
@@ -120,7 +120,7 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-semibold ml-1">Organization / Department</label>
               <select required name="organization" value={formData.organization} onChange={handleChange} className={`${inputClass} cursor-pointer`}>
@@ -137,7 +137,7 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-semibold ml-1">Portal Tender ID</label>
               <input required name="portalId" value={formData.portalId} onChange={handleChange} type="text" placeholder="Portal-ID-12345" className={inputClass} />
@@ -163,7 +163,7 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
             <RichTextEditor name="scopeOfWork" value={formData.scopeOfWork} onChange={handleRichChange} placeholder="Describe the detailed scope of work for this tender..." />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
             <div className="space-y-2 md:col-span-2">
               <label className="text-sm font-semibold ml-1">Location / City</label>
               <input name="location" value={formData.location} onChange={handleChange} type="text" placeholder="e.g. Nagpur, Maharashtra" className={inputClass} />
@@ -178,7 +178,7 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-semibold ml-1">Contact Phone</label>
               <input name="contactPhone" value={formData.contactPhone} onChange={handleChange} type="tel" placeholder="+91 00000 00000" className={inputClass} />
@@ -196,7 +196,7 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
             <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Financials & Timeline</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-semibold ml-1">EMD Amount (Rs.)</label>
               <div className="relative">
@@ -213,7 +213,7 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-semibold ml-1">Due Date</label>
               <div className="relative">
@@ -235,7 +235,7 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
             <RichTextEditor name="paymentTerms" value={formData.paymentTerms} onChange={handleRichChange} placeholder="e.g. 90% on milestone completion, 10% retention for one year..." />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-semibold ml-1">Eligibility — Financial</label>
               <RichTextEditor name="eligibilityFinancial" value={formData.eligibilityFinancial} onChange={handleRichChange} placeholder="Turnover, net worth, similar work value requirements..." />
@@ -246,7 +246,7 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-semibold ml-1">Eligibility — JV / Consortium</label>
               <RichTextEditor name="eligibilityJV" value={formData.eligibilityJV} onChange={handleRichChange} placeholder="Joint venture / consortium participation rules..." />
@@ -263,7 +263,7 @@ export function NewTenderForm({ onClose, onSuccess }: NewTenderFormProps) {
           </div>
         </section>
 
-        <div className="pt-6 flex gap-4">
+        <div className="flex gap-3 pt-6 sm:gap-4">
           <button type="button" onClick={onClose} className="flex-1 h-12 rounded-xl text-sm font-bold border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer">
             Discard
           </button>

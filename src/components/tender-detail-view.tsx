@@ -258,7 +258,7 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
   return (
     <div className="h-full flex flex-col bg-background/50 backdrop-blur-xl">
       {/* Header */}
-      <div className="px-3 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-border flex items-start justify-between gap-3 sm:px-4 sm:py-3">
+      <div className="px-3 pb-3 pt-[calc(0.75rem_+_env(safe-area-inset-top))] border-b border-border flex items-start justify-between gap-3 sm:px-4 sm:py-3">
         <div className="flex items-start gap-2.5 min-w-0">
           <div className="h-9 w-9 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center mt-0.5">
             <FileText className="h-5 w-5 text-primary" />
@@ -456,7 +456,7 @@ export function TenderDetailView({ tender, onClose, onUpdate, readOnly = false }
 
       {/* Footer */}
       {!readOnly && (
-        <div className="px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 border-t border-border bg-background/90 backdrop-blur-md flex sm:px-4 sm:py-3">
+        <div className="px-3 pb-[calc(0.75rem_+_env(safe-area-inset-bottom))] pt-3 border-t border-border bg-background/90 backdrop-blur-md flex sm:px-4 sm:py-3">
           <button onClick={() => setShowVerifyPrompt(true)} className="w-full min-h-11 bg-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer">
             <Save className="h-4 w-4" />
             Save &amp; Verify

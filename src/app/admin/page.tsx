@@ -10,7 +10,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   }
 
   return (
-    <div className="h-screen w-screen">
+    <div className="h-dvh w-full overflow-hidden bg-background pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)]">
       <AdminDashboard isModal={false} initialSection={initialSection} />
     </div>
   );

@@ -43,11 +43,11 @@ export function NewOrganizationForm({ onClose, onSuccess, organization }: { onCl
   }
 
   const inputClass = "h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10";
-  return <div className="h-full overflow-y-auto bg-background p-6 md:p-8">
+  return <div className="h-full overflow-y-auto bg-background p-4 sm:p-6 md:p-8">
     <div className="mx-auto max-w-3xl">
-      <div className="mb-8 flex items-center justify-between border-b border-border pb-5">
-        <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary"><Building2 className="h-5 w-5" /></div><div><h2 className="text-xl font-bold">{isEditing ? "Edit organization" : "Add organization"}</h2><p className="text-sm text-muted-foreground">{isEditing ? "Update the organization details below." : "Only the name is required. You can add details later."}</p></div></div>
-        <button onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full hover:bg-muted"><X className="h-5 w-5" /></button>
+      <div className="mb-6 flex items-start justify-between gap-3 border-b border-border pb-5 sm:mb-8 sm:items-center">
+        <div className="flex min-w-0 items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary"><Building2 className="h-5 w-5" /></div><div className="min-w-0"><h2 className="text-lg font-bold sm:text-xl">{isEditing ? "Edit organization" : "Add organization"}</h2><p className="text-sm text-muted-foreground">{isEditing ? "Update the organization details below." : "Only the name is required. You can add details later."}</p></div></div>
+        <button onClick={onClose} className="grid h-10 w-10 shrink-0 place-items-center rounded-full hover:bg-muted"><X className="h-5 w-5" /></button>
       </div>
       <form onSubmit={submit} className="space-y-5">
         <div><label className="mb-2 block text-sm font-medium">Organization name *</label><input required value={data.name} onChange={(e) => setData({ ...data, name: e.target.value })} className={inputClass} placeholder="e.g. Public Works Department" /></div>

@@ -5,7 +5,7 @@ import { services } from "@/lib/services";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-12 border-t border-border bg-card/40">
+    <footer className="mt-12 border-t border-border bg-card/40 pb-[env(safe-area-inset-bottom)]">
       <div className="w-full px-[4%] md:px-[6%] py-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           <div className="space-y-3">
@@ -115,7 +115,7 @@ export function SiteFooter() {
                 <Mail className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                 <a
                   href="mailto:mashreqenterprises@gmail.com"
-                  className="hover:text-primary transition-colors"
+                  className="break-all hover:text-primary transition-colors"
                 >
                   mashreqenterprises@gmail.com
                 </a>

@@ -47,15 +47,15 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 p-5 text-slate-100 grid place-items-center">
-      <section className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-slate-900 shadow-2xl shadow-black/40">
-        <div className="border-b border-white/10 bg-gradient-to-br from-[#b86b35] to-[#9f5829] p-8">
+    <main className="grid min-h-dvh place-items-center bg-slate-950 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] text-slate-100 sm:px-5">
+      <section className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl shadow-black/40 sm:rounded-3xl">
+        <div className="border-b border-white/10 bg-gradient-to-br from-[#b86b35] to-[#9f5829] p-6 sm:p-8">
           <div className="mb-6 grid h-12 w-12 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/30"><ShieldCheck /></div>
           <p className="text-sm font-semibold tracking-widest text-white/85 uppercase">GovTender Pro</p>
-          <h1 className="mt-2 text-3xl font-bold">{setupRequired ? "Create admin access" : "Admin access"}</h1>
+          <h1 className="mt-2 text-2xl font-bold sm:text-3xl">{setupRequired ? "Create admin access" : "Admin access"}</h1>
           <p className="mt-2 text-sm text-white/80">{setupRequired ? "Set the first password to secure this dashboard." : "Connect securely to manage tenders and documents."}</p>
         </div>
-        <form onSubmit={connect} className="space-y-5 p-8">
+        <form onSubmit={connect} className="space-y-5 p-6 sm:p-8">
           {setupRequired === null && !error ? <p className="text-sm text-slate-400">Checking admin configuration…</p> : null}
           <label className="block text-sm font-medium text-slate-300" htmlFor="admin-password">{setupRequired ? "Create password" : "Password"}</label>
           <div className="relative">
