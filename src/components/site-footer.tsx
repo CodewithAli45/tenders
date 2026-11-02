@@ -1,4 +1,4 @@
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Mail, MapPin, Phone, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { services } from "@/lib/services";
@@ -137,6 +137,14 @@ export function SiteFooter() {
         <p className="text-xs font-semibold text-muted-foreground">
           Real-time Government Tender Intelligence Platform
         </p>
+        <Link
+          href="/admin"
+          aria-label="Admin panel"
+          title="Admin panel"
+          className="pwa-mobile-only mt-1 h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:border-primary hover:text-primary sm:mt-0"
+        >
+          <ShieldCheck className="h-4 w-4" />
+        </Link>
       </div>
     </footer>
   );

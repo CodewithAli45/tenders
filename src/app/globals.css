@@ -107,6 +107,16 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+.pwa-mobile-only {
+  display: none !important;
+}
+
+@media (display-mode: standalone) and (max-width: 1023px), (display-mode: fullscreen) and (max-width: 1023px) {
+  .pwa-mobile-only {
+    display: inline-flex !important;
+  }
+}
+
 button, 
 [role="button"],
 .cursor-pointer {
