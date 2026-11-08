@@ -144,6 +144,9 @@ export default function Home() {
   });
 
   const sortedTenders = [...filteredTenders].sort((a, b) => {
+    const aDueDate = a.dueDate ? new Date(a.dueDate).getTime() : Number.POSITIVE_INFINITY;
+    const bDueDate = b.dueDate ? new Date(b.dueDate).getTime() : Number.POSITIVE_INFINITY;
+    if (aDueDate !== bDueDate) return bDueDate - aDueDate;
     const aCreatedAt = a.createdAt ? new Date(a.createdAt).getTime() : 0;
     const bCreatedAt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
     return bCreatedAt - aCreatedAt;
