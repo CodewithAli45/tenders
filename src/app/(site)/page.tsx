@@ -11,11 +11,11 @@ import {
   Clock,
   Layers,
   Megaphone,
-  Newspaper,
   Radio,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { TenderDetailView } from "@/components/tender-detail-view";
+import { PublicNewsSection } from "@/components/public-news-section";
 import { useSiteSearch } from "@/components/site-search-context";
 
 interface Tender {
@@ -398,14 +398,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-border bg-card/70 p-3.5 shadow-sm">
-            <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              <Newspaper className="h-4 w-4 text-primary" /> News &amp; Updates
-            </h2>
-            <div className="mt-3 rounded-xl bg-muted/30 px-3 py-4 text-center">
-              <p className="text-xs text-muted-foreground">News updates coming soon</p>
-            </div>
-          </section>
+          <PublicNewsSection />
         </aside>
         </div>
     </>

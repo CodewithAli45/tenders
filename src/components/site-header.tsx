@@ -148,7 +148,7 @@ export function SiteHeader() {
           )}
 
           <div className="hidden lg:flex items-center gap-1">
-            {navItems.map((item) => (
+            {navItems.map((item, index) => (
               <div
                 key={item.label}
                 className="relative group"
@@ -179,7 +179,7 @@ export function SiteHeader() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 6, scale: 0.98 }}
                       transition={{ duration: 0.15, ease: "easeOut" }}
-                      className="absolute top-full left-0 mt-1.5 w-80 rounded-2xl dropdown-popover p-2 shadow-2xl z-[100] border border-border bg-card text-card-foreground"
+                      className={`absolute top-full ${index >= navItems.length - 2 ? "right-0" : "left-0"} mt-1.5 w-80 max-w-[calc(100vw-1rem)] rounded-2xl dropdown-popover p-2 shadow-2xl z-[100] border border-border bg-card text-card-foreground`}
                     >
                       <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/60 mb-1 flex items-center justify-between">
                         <span>{item.label} Modules</span>

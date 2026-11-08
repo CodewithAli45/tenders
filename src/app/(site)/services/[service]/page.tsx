@@ -5,6 +5,8 @@ import { PriceVariationReferencePage } from "@/components/price-variation-refere
 import { RegistrationServicePage } from "@/components/registration-service-page";
 import { BidPreparationServicePage } from "@/components/bid-preparation-service-page";
 import { ClarificationSubmissionServicePage } from "@/components/clarification-submission-service-page";
+import { ExtraClaimsServicePage } from "@/components/extra-claims-service-page";
+import { EstimationBillingServicePage } from "@/components/estimation-billing-service-page";
 import { getService, services } from "@/lib/services";
 
 export function generateStaticParams() {
@@ -34,6 +36,20 @@ export async function generateMetadata({ params }: { params: Promise<{ service: 
         "Clause-specific pre-bid clarifications for Indian government tenders: review of tender conditions, specifications and BOQ items, query drafting, and a submission-ready clarification schedule.",
     };
   }
+  if (service === "extra-claim") {
+    return {
+      title: "Extra Work Claims & BOQ Deviations | GovTender Pro",
+      description:
+        "Identify and document extra work beyond the signed contract or BOQ. Prepare timely, evidence-backed claims for additional items, quantity deviations, revised drawings, and instructed scope changes.",
+    };
+  }
+  if (service === "estimation-billing-schedule") {
+    return {
+      title: "Turnkey Project Estimation & Billing Schedule | GovTender Pro",
+      description:
+        "Project-specific turnkey estimation based on scope, site visits, local conditions, material and labour availability, logistics, execution requirements, and the tender's billing structure.",
+    };
+  }
   const detail = getService(service);
   if (!detail) return { title: "Service not found | GovTender Pro" };
   return {
@@ -48,6 +64,8 @@ export default async function ServicePage({ params }: { params: Promise<{ servic
   if (service === "registration") return <RegistrationServicePage />;
   if (service === "bid-preparation") return <BidPreparationServicePage />;
   if (service === "clarification-submission") return <ClarificationSubmissionServicePage />;
+  if (service === "extra-claim") return <ExtraClaimsServicePage />;
+  if (service === "estimation-billing-schedule") return <EstimationBillingServicePage />;
 
   const detail = getService(service);
   if (!detail) notFound();

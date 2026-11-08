@@ -78,29 +78,29 @@ export const services: ServiceDetail[] = [
   {
     slug: "estimation-billing-schedule",
     label: "Estimation & Billing Schedule",
-    description: "BOQ costing & RA bill schedules",
+    description: "Turnkey project estimation & billing schedules",
     icon: Calculator,
     summary:
-      "Build reliable cost estimates from the BOQ and rate analysis, then keep the billing schedule and measurement books aligned through every running account bill.",
+      "Estimate turnkey work from the full scope, project requirements, and site conditions—not from schedule rates alone. We assess quantities, local availability, logistics, execution constraints, and billing requirements so important costs are visible before you submit a price.",
     includes: [
-      "BOQ costing and rate analysis",
-      "Quantity and measurement checks",
-      "RA bill and billing schedule",
-      "Variation and escalation tracking",
+      "Tender scope and deliverable breakdown",
+      "Site visit and local condition assessment",
+      "Materials, labour, logistics, and execution costing",
+      "Turnkey price build-up and billing schedule",
     ],
   },
   {
     slug: "extra-claim",
-    label: "Extra Claim",
-    description: "Dispute & deviation filings",
+    label: "Extra Claims",
+    description: "Claims for extra work and BOQ deviations",
     icon: AlertOctagon,
     summary:
-      "Prepare extra item and deviation claims with the measurement, correspondence, and contractual basis needed to support them through evaluation and settlement.",
+      "Identify and document work that falls outside the signed contract or BOQ, including additional items, changed quantities, revised drawings, and instructed scope changes. Prepare a timely, evidence-backed claim under the applicable contract procedure.",
     includes: [
-      "Claim basis and clause mapping",
-      "Measurement and record evidence",
-      "Deviation and extra item filings",
-      "Correspondence and follow-up",
+      "Contract, BOQ, and drawing comparison",
+      "Extra item and deviation measurement records",
+      "Notice, rate build-up, and claim preparation",
+      "Evidence schedule and submission follow-up",
     ],
   },
 ];
