@@ -82,15 +82,26 @@ export async function PATCH(request: Request) {
   try {
     const input = await request.json() as NewsInput;
     const parsed = parseNews(input);
-    if (!parsed.value) return NextResponse.json({ error: parsed.error }, { status: 400 });
     const id = typeof input.id === "string" ? input.id : "";
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
       return NextResponse.json({ error: "A valid news record ID is required." }, { status: 400 });
     }
+    if (!parsed.value) return NextResponse.json({ error: parsed.error }, { status: 400 });
+    const existingResponse = await supabaseRequest(
+      `/rest/v1/platform_news?select=id,published,published_at&id=eq.${encodeURIComponent(id)}`,
+    );
+    const existingRows = await existingResponse.json() as { published: boolean; published_at: string | null }[];
+    const existing = existingRows[0];
+    if (!existing) return NextResponse.json({ error: "News item not found." }, { status: 404 });
+    const publishedAt = parsed.value.published
+      ? existing.published && existing.published_at
+        ? existing.published_at
+        : new Date().toISOString()
+      : null;
     const response = await supabaseRequest(`/rest/v1/platform_news?id=eq.${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Prefer: "return=representation" },
-      body: JSON.stringify(parsed.value),
+      body: JSON.stringify({ ...parsed.value, published_at: publishedAt }),
     });
     const rows = await response.json();
     if (!rows.length) return NextResponse.json({ error: "News item not found." }, { status: 404 });

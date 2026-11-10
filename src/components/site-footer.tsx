@@ -132,19 +132,14 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-border py-5 px-[4%] md:px-[6%] flex flex-col sm:flex-row items-center justify-between gap-2">
         <p className="text-xs font-semibold text-muted-foreground">
-          © 2026 MASHREQ ENTERPRISES. All rights reserved.
+          © 2026 MASHREQ ENTERPRISES. All rights reserved.{" "}
+          <Link href="/admin" aria-label="Admin panel" title="Admin panel" className="inline-flex align-middle text-muted-foreground/50">
+            <ShieldCheck className="h-3 w-3" />
+          </Link>
         </p>
         <p className="text-xs font-semibold text-muted-foreground">
           Real-time Government Tender Intelligence Platform
         </p>
-        <Link
-          href="/admin"
-          aria-label="Admin panel"
-          title="Admin panel"
-          className="pwa-mobile-only mt-1 h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:border-primary hover:text-primary sm:mt-0"
-        >
-          <ShieldCheck className="h-4 w-4" />
-        </Link>
       </div>
     </footer>
   );

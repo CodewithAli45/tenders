@@ -8,7 +8,7 @@ export async function GET() {
   if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Admin authentication required" }, { status: 401 });
   try {
     const response = await supabaseRequest(
-      "/rest/v1/tender_tracking?select=*,tender:tenders!tender_tracking_tender_id_fkey(id,internal_id,title,organization,due_date,tender_value),bidders:tender_bidders(*)&order=updated_at.desc"
+      "/rest/v1/tender_tracking?select=*,tender:tenders!tender_tracking_tender_id_fkey(id,internal_id,title,organization,due_date,tender_value),bidders:tender_bidders(*,profile:bidder_profiles(id,name,contact_person,email,phone,address,notes))&order=updated_at.desc"
     );
     return NextResponse.json(await response.json());
   } catch (error) {
@@ -20,15 +20,17 @@ export async function GET() {
 export async function POST(request: Request) {
   if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Admin authentication required" }, { status: 401 });
   try {
-    const data = await request.json() as { tenderId?: string; stage?: string };
+    const data = await request.json() as { tenderId?: string; stage?: string; technicalBidMode?: string; notes?: string };
     if (!data.tenderId) return NextResponse.json({ error: "Tender ID is required" }, { status: 400 });
-    const stage = data.stage || stages[0];
+    if (!data.stage) return NextResponse.json({ error: "Select a tender status before saving" }, { status: 400 });
+    const stage = data.stage;
     if (!stages.includes(stage as typeof stages[number])) return NextResponse.json({ error: "Invalid tracking stage" }, { status: 400 });
+    if (!["summary", "detailed"].includes(data.technicalBidMode ?? "")) return NextResponse.json({ error: "Select the technical bid information type" }, { status: 400 });
 
     const response = await supabaseRequest("/rest/v1/tender_tracking", {
       method: "POST",
       headers: { "Content-Type": "application/json", Prefer: "return=representation" },
-      body: JSON.stringify({ tender_id: data.tenderId, stage }),
+      body: JSON.stringify({ tender_id: data.tenderId, stage, technical_bid_mode: data.technicalBidMode, notes: data.notes?.trim() || null }),
     });
     return NextResponse.json((await response.json())[0], { status: 201 });
   } catch (error) {
@@ -38,6 +40,11 @@ export async function POST(request: Request) {
     }
     if (message.includes("23503")) return NextResponse.json({ error: "Tender not found" }, { status: 404 });
     console.error("Tender tracking create error:", error);
-    return NextResponse.json({ error: "Failed to add tender to tracker" }, { status: 500 });
+    try {
+      const details = JSON.parse(message) as { message?: string; details?: string };
+      return NextResponse.json({ error: details.message || details.details || "Failed to save tender status" }, { status: 500 });
+    } catch {
+      return NextResponse.json({ error: message || "Failed to save tender status" }, { status: 500 });
+    }
   }
 }

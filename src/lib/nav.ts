@@ -22,18 +22,15 @@ export interface NavSubItem {
   target?: string;
 }
 
-export interface NavItem {
-  label: string;
-  href: string;
-  dropdown?: NavSubItem[];
-}
+export type NavItem =
+  | { label: string; href: string; dropdown?: never }
+  | { label: string; href?: never; dropdown: NavSubItem[] };
 
 export const navItems: NavItem[] = [
   { label: "Home", href: "/" },
   { label: "About Us", href: "/about" },
   {
     label: "Tenders",
-    href: "/tenders",
     dropdown: [
       { label: "Status Tracker", href: "/tenders/status", description: "Check evaluation & technical bids", icon: Activity },
       { label: "Awarded Bids", href: "/tenders/award", description: "Recently finalized contract awards", icon: Award },
@@ -42,7 +39,6 @@ export const navItems: NavItem[] = [
   },
   {
     label: "Tools",
-    href: "/tools",
     dropdown: [
       { label: "Tender Document Tools", href: "/tender-document-tools", description: "Prepare your tender documents for portal submission", icon: FileText, target: "_blank" },
       { label: "Calculator", href: "/tools/calculator", description: "EMD & cost estimation toolkit", icon: Calculator },
@@ -52,7 +48,6 @@ export const navItems: NavItem[] = [
   },
   {
     label: "Services",
-    href: "/services",
     dropdown: serviceNavItems,
   },
 ];

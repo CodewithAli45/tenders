@@ -8,7 +8,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
   if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Admin authentication required" }, { status: 401 });
   try {
     const { trackingId } = await params;
-    const data = await request.json() as { bidderName?: string; technicalStatus?: string; quotedRate?: number | string | null; financialRank?: number | string | null; notes?: string };
+    const data = await request.json() as { bidderName?: string; bidderProfileId?: string | null; technicalStatus?: string; quotedRate?: number | string | null; financialRank?: number | string | null; notes?: string };
     const bidderName = data.bidderName?.trim();
     if (!bidderName) return NextResponse.json({ error: "Bidder name is required" }, { status: 400 });
     const technicalStatus = data.technicalStatus || technicalStatuses[0];
@@ -21,7 +21,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tra
     const response = await supabaseRequest("/rest/v1/tender_bidders", {
       method: "POST",
       headers: { "Content-Type": "application/json", Prefer: "return=representation" },
-      body: JSON.stringify({ tracking_id: trackingId, bidder_name: bidderName, technical_status: technicalStatus, quoted_rate: quotedRate, financial_rank: financialRank, notes: data.notes?.trim() || null }),
+      body: JSON.stringify({ tracking_id: trackingId, bidder_name: bidderName, bidder_profile_id: data.bidderProfileId || null, technical_status: technicalStatus, quoted_rate: quotedRate, financial_rank: financialRank, notes: data.notes?.trim() || null }),
     });
     return NextResponse.json((await response.json())[0], { status: 201 });
   } catch (error) {

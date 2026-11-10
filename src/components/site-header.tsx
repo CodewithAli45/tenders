@@ -155,23 +155,36 @@ export function SiteHeader() {
                 onMouseEnter={() => setActiveDropdown(item.label)}
                 onMouseLeave={() => setActiveDropdown(null)}
               >
-                <Link
-                  href={item.href}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-                    activeDropdown === item.label
-                      ? "bg-secondary text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-                  }`}
-                >
-                  {item.label}
-                  {item.dropdown && (
+                {item.dropdown ? (
+                  <button
+                    type="button"
+                    aria-expanded={activeDropdown === item.label}
+                    onClick={() => setActiveDropdown(item.label)}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                      activeDropdown === item.label
+                        ? "bg-secondary text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                    }`}
+                  >
+                    {item.label}
                     <ChevronDown
                       className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
                         activeDropdown === item.label ? "rotate-180 text-primary" : ""
                       }`}
                     />
-                  )}
-                </Link>
+                  </button>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                      activeDropdown === item.label
+                        ? "bg-secondary text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                )}
                 <AnimatePresence>
                   {item.dropdown && activeDropdown === item.label && (
                     <motion.div

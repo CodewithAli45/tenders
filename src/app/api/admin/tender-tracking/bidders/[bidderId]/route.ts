@@ -8,7 +8,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ bi
   if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "Admin authentication required" }, { status: 401 });
   try {
     const { bidderId } = await params;
-    const data = await request.json() as { bidderName?: string; technicalStatus?: string; quotedRate?: number | string | null; financialRank?: number | string | null; notes?: string | null };
+    const data = await request.json() as { bidderName?: string; bidderProfileId?: string | null; technicalStatus?: string; quotedRate?: number | string | null; financialRank?: number | string | null; notes?: string | null };
     const fields: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (data.bidderName !== undefined) {
       if (!data.bidderName.trim()) return NextResponse.json({ error: "Bidder name is required" }, { status: 400 });
@@ -29,6 +29,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ bi
       fields.financial_rank = value;
     }
     if (data.notes !== undefined) fields.notes = data.notes?.trim() || null;
+    if (data.bidderProfileId !== undefined) fields.bidder_profile_id = data.bidderProfileId || null;
     if (Object.keys(fields).length === 1) return NextResponse.json({ error: "No fields to update" }, { status: 400 });
 
     const response = await supabaseRequest(`/rest/v1/tender_bidders?id=eq.${encodeURIComponent(bidderId)}`, {

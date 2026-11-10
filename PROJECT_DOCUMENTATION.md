@@ -403,6 +403,7 @@ Apply every file in `supabase/migrations/` in filename order, including:
 - `20260924000000_tender_professional_fields.sql`
 - `20261002000000_tender_tracking.sql`
 - `20261030000000_google_sheets_sync.sql`
+- `20261110000000_bidder_profiles.sql` (reusable bidder directory and technical bid display mode)
 
 The data migration creates the public `tender-attachments` storage bucket. Ensure the storage API is enabled for the Supabase project. The Google Sheets migration creates `google_sheets_sync_runs`; the sync and history features are unavailable until it is applied.
 

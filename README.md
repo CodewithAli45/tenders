@@ -13,7 +13,7 @@ Dependencies are declared in `package.json` and `package-lock.json`. After cloni
 
 ## Configure Supabase
 
-1. In the Supabase SQL Editor, run every SQL file in [`supabase/migrations`](./supabase/migrations/) in filename order. The migrations create the application tables, access policies, and tender attachment storage bucket.
+1. In the Supabase SQL Editor, run every SQL file in [`supabase/migrations`](./supabase/migrations/) in filename order. The migrations create the application tables, access policies, and tender attachment storage bucket. This includes `20261110000000_bidder_profiles.sql` for reusable bidder contact details and technical bid display mode.
 2. Copy [`.env.example`](./.env.example) to `.env.local` and fill in your Supabase project URL, server-only Secret key (or legacy `service_role` key), and a random session secret. Keep `.env.local` private and out of version control.
 3. Restart the app after changing environment variables.
 
