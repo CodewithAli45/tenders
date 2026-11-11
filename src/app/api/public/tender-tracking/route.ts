@@ -14,12 +14,19 @@ export async function GET() {
     );
     const tenders = await response.json();
     return NextResponse.json(tenders.map((tender: Record<string, unknown>) => {
-      const tracking = Array.isArray(tender.tracking) ? tender.tracking[0] : null;
+      const trackingValue = tender.tracking;
+      const tracking = Array.isArray(trackingValue)
+        ? trackingValue[0] as Record<string, unknown> | undefined
+        : trackingValue && typeof trackingValue === "object"
+          ? trackingValue as Record<string, unknown>
+          : undefined;
+      const bidderValue = tracking?.bidders;
+      const bidders = Array.isArray(bidderValue) ? bidderValue : bidderValue ? [bidderValue] : [];
       return {
-        id: (tracking as Record<string, unknown> | null)?.id ?? tender.id,
-        stage: (tracking as Record<string, unknown> | null)?.stage ?? "not_added",
-        updated_at: (tracking as Record<string, unknown> | null)?.updated_at ?? null,
-        technical_bid_mode: (tracking as Record<string, unknown> | null)?.technical_bid_mode ?? "summary",
+        id: tracking?.id ?? tender.id,
+        stage: tracking?.stage ?? "not_added",
+        updated_at: tracking?.updated_at ?? null,
+        technical_bid_mode: tracking?.technical_bid_mode ?? "summary",
         tender: {
           id: tender.id,
           internal_id: tender.internal_id,
@@ -29,7 +36,7 @@ export async function GET() {
           tender_no: tender.tender_no,
           tender_value: tender.tender_value,
         },
-        bidders: (tracking as { bidders?: unknown[] } | null)?.bidders ?? [],
+        bidders,
       };
     }), { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
