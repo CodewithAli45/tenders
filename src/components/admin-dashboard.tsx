@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Activity, Building2, FileSpreadsheet, FileText, FolderOpen, Home, LayoutDashboard, LogOut, Newspaper, Plus, RefreshCw, Search, X } from "lucide-react";
+import { Activity, Building2, FileSpreadsheet, FileText, FolderOpen, Home, LayoutDashboard, LogOut, Newspaper, Plus, RefreshCw, Search, Users, X } from "lucide-react";
 import axios from "axios";
 import { GoogleSheetsSync } from "./google-sheets-sync";
 import { NewTenderForm } from "./new-tender-form";
@@ -11,9 +11,10 @@ import { NewOrganizationForm } from "./new-organization-form";
 import { TenderDetailView } from "./tender-detail-view";
 import { TenderTrackingManager } from "./tender-tracking-manager";
 import { PlatformNewsManager } from "./platform-news-manager";
+import { BidderAnalysisDashboard } from "./bidder-analysis-dashboard";
 
 interface AdminDashboardProps { onClose?: () => void; isModal?: boolean; initialSection?: Section }
-type Section = "tenders" | "organizations" | "attachments" | "tracking" | "sheets" | "news";
+type Section = "tenders" | "tracking" | "bidders" | "organizations" | "attachments" | "sheets" | "news";
 type Tender = { _id: string; internalId: string; title: string; organization: string; dueDate: string; tenderValue?: number; tenderDocuments?: string[]; corrigendumFiles?: string[]; createdAt?: string };
 type Organization = { _id: string; name: string; details: string; contactPerson?: string; email?: string; phone?: string; address?: string; createdAt?: string };
 
@@ -43,10 +44,11 @@ export function AdminDashboard({ onClose, isModal = false, initialSection = "ten
     ...(tender.tenderDocuments || []).map((url, index) => ({ id: `${tender._id}-document-${index}`, url, tender, type: "Document" })),
     ...(tender.corrigendumFiles || []).map((url, index) => ({ id: `${tender._id}-corrigendum-${index}`, url, tender, type: "Corrigendum" })),
   ]), [tenders]);
-  const label = section === "tenders" ? "Tenders" : section === "organizations" ? "Organization" : section === "attachments" ? "Attachment" : section === "sheets" ? "Google Sheets" : section === "news" ? "Platform News" : "Status Tracker";
+  const label = section === "tenders" ? "Tenders" : section === "tracking" ? "Status Tracker" : section === "bidders" ? "Bidders" : section === "organizations" ? "Organization" : section === "attachments" ? "Attachment" : section === "sheets" ? "Google Sheets" : section === "news" ? "Platform News" : "Status Tracker";
   const navSections = [
     { id: "tenders", label: "Tenders", short: "Tenders", icon: FileText },
     { id: "tracking", label: "Status Tracker", short: "Tracker", icon: Activity },
+    { id: "bidders", label: "Bidders", short: "Bidders", icon: Users },
     { id: "organizations", label: "Organizations", short: "Orgs", icon: Building2 },
     { id: "attachments", label: "Attachments", short: "Files", icon: FolderOpen },
     { id: "sheets", label: "Google Sheets", short: "Sheets", icon: FileSpreadsheet },
@@ -73,9 +75,11 @@ export function AdminDashboard({ onClose, isModal = false, initialSection = "ten
         viewingOrganization ? <motion.div key="edit-organization" className="h-full" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}><NewOrganizationForm organization={viewingOrganization} onClose={closeEditor} onSuccess={() => { closeEditor(); loadData(); }} /></motion.div> :
         viewingTender ? <motion.div key="tender-detail" className="h-full" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}><TenderDetailView tender={viewingTender} onClose={closeEditor} onUpdate={loadData} /></motion.div> :
         <motion.div key="list" className="flex h-full flex-col" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5 md:min-h-20 md:px-8"><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-widest text-primary sm:text-xs">{section === "tracking" ? "Post-bid workflow" : section === "sheets" ? "Publishing" : section === "news" ? "Admin-managed content" : "Database table"}</p><h1 className="mt-0.5 truncate text-lg font-bold sm:mt-1 sm:text-xl">{label}</h1></div><div className="flex items-center gap-2">{section !== "tracking" && section !== "sheets" && section !== "news" && <button onClick={loadData} className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card text-muted-foreground transition hover:border-primary hover:text-primary" aria-label="Refresh records" title="Refresh"><RefreshCw className="h-4 w-4" /></button>}{(section === "tenders" || section === "organizations") && <button onClick={() => setMode(section === "tenders" ? "newTender" : "newOrganization")} className="flex items-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110 sm:px-4"><Plus className="h-4 w-4" />Add<span className="hidden sm:inline">&nbsp;{section === "tenders" ? "tender" : "organization"}</span></button>}<button onClick={logout} disabled={isLoggingOut} className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card text-muted-foreground transition hover:border-destructive hover:text-destructive disabled:opacity-60 lg:hidden" aria-label="Logout" title="Logout"><LogOut className="h-4 w-4" /></button>{isModal && <button onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full hover:bg-muted"><X className="h-5 w-5" /></button>}</div></header>
+          <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5 md:min-h-20 md:px-8"><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-widest text-primary sm:text-xs">{section === "tracking" ? "Post-bid workflow" : section === "bidders" ? "Bidder analysis" : section === "sheets" ? "Publishing" : section === "news" ? "Admin-managed content" : "Database table"}</p><h1 className="mt-0.5 truncate text-lg font-bold sm:mt-1 sm:text-xl">{label}</h1></div><div className="flex items-center gap-2">{section !== "tracking" && section !== "bidders" && section !== "sheets" && section !== "news" && <button onClick={loadData} className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card text-muted-foreground transition hover:border-primary hover:text-primary" aria-label="Refresh records" title="Refresh"><RefreshCw className="h-4 w-4" /></button>}{(section === "tenders" || section === "organizations") && <button onClick={() => setMode(section === "tenders" ? "newTender" : "newOrganization")} className="flex items-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-110 sm:px-4"><Plus className="h-4 w-4" />Add<span className="hidden sm:inline">&nbsp;{section === "tenders" ? "tender" : "organization"}</span></button>}<button onClick={logout} disabled={isLoggingOut} className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card text-muted-foreground transition hover:border-destructive hover:text-destructive disabled:opacity-60 lg:hidden" aria-label="Logout" title="Logout"><LogOut className="h-4 w-4" /></button>{isModal && <button onClick={onClose} className="grid h-10 w-10 place-items-center rounded-full hover:bg-muted"><X className="h-5 w-5" /></button>}</div></header>
           {section === "tracking" ? (
             <div className="min-h-0 flex-1"><TenderTrackingManager tenders={tenders} /></div>
+          ) : section === "bidders" ? (
+            <div className="min-h-0 flex-1 overflow-auto p-3 sm:p-5 md:p-8"><BidderAnalysisDashboard /></div>
           ) : section === "sheets" ? (
             <section className="flex-1 overflow-auto p-3 sm:p-5 md:p-8"><GoogleSheetsSync /></section>
           ) : section === "news" ? (
