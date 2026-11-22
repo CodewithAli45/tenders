@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { RichContent } from "@/components/rich-content";
+import DOMPurify from "isomorphic-dompurify";
 import { getPublicTenderById } from "@/lib/public-tenders";
 
 type Props = { params: Promise<{ id: string }> };
@@ -45,6 +45,19 @@ function DetailSection({ title, children }: { title: string; children: ReactNode
   );
 }
 
+function SafeTenderContent({ html }: { html: unknown }) {
+  const source = typeof html === "string" ? html : "";
+  const safeHtml = source
+    ? DOMPurify.sanitize(source, { USE_PROFILES: { html: true } })
+    : "";
+
+  return safeHtml ? (
+    <div className="rich-text-surface text-sm" dangerouslySetInnerHTML={{ __html: safeHtml }} />
+  ) : (
+    <p className="text-sm italic text-muted-foreground">Not specified.</p>
+  );
+}
+
 export default async function TenderPage({ params }: Props) {
   const { id } = await params;
   const tender = await getPublicTenderById(id);
@@ -84,14 +97,14 @@ export default async function TenderPage({ params }: Props) {
         </dl>
       </header>
 
-      {tender.scopeOfWork && <DetailSection title="Scope of work"><RichContent html={tender.scopeOfWork} /></DetailSection>}
+      {tender.scopeOfWork && <DetailSection title="Scope of work"><SafeTenderContent html={tender.scopeOfWork} /></DetailSection>}
 
       {(tender.eligibilityTechnical || tender.eligibilityFinancial || tender.eligibilityJV) && (
         <DetailSection title="Eligibility requirements">
           <div className="space-y-4">
-            {tender.eligibilityTechnical && <div><h3 className="mb-1 text-sm font-bold">Technical eligibility</h3><RichContent html={tender.eligibilityTechnical} /></div>}
-            {tender.eligibilityFinancial && <div><h3 className="mb-1 text-sm font-bold">Financial eligibility</h3><RichContent html={tender.eligibilityFinancial} /></div>}
-            {tender.eligibilityJV && <div><h3 className="mb-1 text-sm font-bold">Joint venture conditions</h3><RichContent html={tender.eligibilityJV} /></div>}
+            {tender.eligibilityTechnical && <div><h3 className="mb-1 text-sm font-bold">Technical eligibility</h3><SafeTenderContent html={tender.eligibilityTechnical} /></div>}
+            {tender.eligibilityFinancial && <div><h3 className="mb-1 text-sm font-bold">Financial eligibility</h3><SafeTenderContent html={tender.eligibilityFinancial} /></div>}
+            {tender.eligibilityJV && <div><h3 className="mb-1 text-sm font-bold">Joint venture conditions</h3><SafeTenderContent html={tender.eligibilityJV} /></div>}
           </div>
         </DetailSection>
       )}
@@ -99,9 +112,9 @@ export default async function TenderPage({ params }: Props) {
       {(tender.technicalAnalysis || tender.boqSummary || tender.paymentTerms) && (
         <DetailSection title="Tender analysis and conditions">
           <div className="space-y-4">
-            {tender.technicalAnalysis && <div><h3 className="mb-1 text-sm font-bold">Technical notes</h3><RichContent html={tender.technicalAnalysis} /></div>}
-            {tender.boqSummary && <div><h3 className="mb-1 text-sm font-bold">BOQ summary</h3><RichContent html={tender.boqSummary} /></div>}
-            {tender.paymentTerms && <div><h3 className="mb-1 text-sm font-bold">Payment terms</h3><RichContent html={tender.paymentTerms} /></div>}
+            {tender.technicalAnalysis && <div><h3 className="mb-1 text-sm font-bold">Technical notes</h3><SafeTenderContent html={tender.technicalAnalysis} /></div>}
+            {tender.boqSummary && <div><h3 className="mb-1 text-sm font-bold">BOQ summary</h3><SafeTenderContent html={tender.boqSummary} /></div>}
+            {tender.paymentTerms && <div><h3 className="mb-1 text-sm font-bold">Payment terms</h3><SafeTenderContent html={tender.paymentTerms} /></div>}
           </div>
         </DetailSection>
       )}

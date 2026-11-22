@@ -1,4 +1,5 @@
-import TenderDashboard from "@/components/tender-dashboard";
+import { TenderDashboardMount } from "@/components/tender-dashboard-mount";
+import { TenderIndexPreview } from "@/components/tender-index-preview";
 import { getPublicTenders } from "@/lib/public-tenders";
 import type { MappedTender } from "@/lib/tender-mapping";
 import type { Metadata } from "next";
@@ -17,5 +18,9 @@ export default async function Home() {
     console.error("Public tender page load error:", error);
   }
 
-  return <TenderDashboard initialTenders={tenders} />;
+  return (
+    <TenderDashboardMount initialTenders={tenders}>
+      <TenderIndexPreview tenders={tenders} />
+    </TenderDashboardMount>
+  );
 }

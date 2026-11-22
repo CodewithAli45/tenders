@@ -76,7 +76,13 @@ const getAvatarInitial = (name: string) => {
   return (first + second).toUpperCase();
 };
 
-export default function TenderDashboard({ initialTenders }: { initialTenders: MappedTender[] }) {
+export default function TenderDashboard({
+  initialTenders,
+  onReady,
+}: {
+  initialTenders: MappedTender[];
+  onReady?: () => void;
+}) {
   const [selectedTender, setSelectedTender] = useState<Tender | null>(null);
   const { searchQuery } = useSiteSearch();
   const [statusFilter, setStatusFilter] = useState<"all" | TenderStatus>("all");
@@ -93,6 +99,10 @@ export default function TenderDashboard({ initialTenders }: { initialTenders: Ma
   };
   const [tenders] = useState<Tender[]>(initialTenders);
   const loading = false;
+
+  useEffect(() => {
+    onReady?.();
+  }, [onReady]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
