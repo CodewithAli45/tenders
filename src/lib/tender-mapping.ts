@@ -1,7 +1,36 @@
 type TenderRow = Record<string, unknown>;
 type AttachmentRow = Record<string, unknown>;
 
-export function fromTenderRow(row: TenderRow) {
+export interface MappedTender {
+  _id: string;
+  internalId: string;
+  title: string;
+  organization: string;
+  tenderValue: number;
+  tenderNo: string;
+  portalId: string;
+  emdAmount: number;
+  publishDate: string | null;
+  dueDate: string;
+  createdAt: string | null;
+  updatedAt: string | null;
+  scopeOfWork: string;
+  location: string;
+  contactPerson: string;
+  contactPhone: string;
+  contactEmail: string;
+  paymentTerms: string;
+  officerDesignation: string;
+  eligibilityFinancial: string;
+  eligibilityTechnical: string;
+  eligibilityJV: string;
+  technicalAnalysis: string;
+  boqSummary: string;
+  tenderDocuments: string[];
+  corrigendumFiles: string[];
+}
+
+export function fromTenderRow(row: TenderRow): MappedTender {
   const attachments = (row.attachments as AttachmentRow[] | undefined) || [];
   return {
     _id: row.id,
@@ -30,5 +59,5 @@ export function fromTenderRow(row: TenderRow) {
     boqSummary: row.boq_summary || "",
     tenderDocuments: attachments.filter((file) => file.attachment_type === "document").map((file) => file.file_url),
     corrigendumFiles: attachments.filter((file) => file.attachment_type === "corrigendum").map((file) => file.file_url),
-  };
+  } as MappedTender;
 }
