@@ -253,11 +253,8 @@ export default function TenderDashboard({ initialTenders }: { initialTenders: Ma
                   const status = getTenderStatus(tender.dueDate);
                   const relDue = getRelativeDue(tender.dueDate);
                   return (
-                  <motion.div
+                  <div
                     key={tender._id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.25, ease: "easeOut" }}
                     onClick={() => setSelectedTender(tender)}
                     className="group relative cursor-pointer px-4 py-3 hover:bg-muted/40 transition-colors border-l-[3px] border-l-transparent hover:border-l-primary"
                   >
@@ -327,7 +324,7 @@ export default function TenderDashboard({ initialTenders }: { initialTenders: Ma
                         Published: <span className="font-bold text-foreground">{formatDate(tender.publishDate)}</span>
                       </span>
                     </div>
-                  </motion.div>
+                  </div>
                   );
                 })
               )}
