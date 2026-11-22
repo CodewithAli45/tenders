@@ -140,6 +140,14 @@ export function SiteFooter() {
         <p className="text-xs font-semibold text-muted-foreground">
           Real-time Government Tender Intelligence Platform
         </p>
+        <nav aria-label="Legal" className="flex items-center gap-4 text-xs font-semibold text-muted-foreground">
+          <Link href="/privacy-policy" className="hover:text-primary transition-colors">
+            Privacy Policy
+          </Link>
+          <Link href="/disclaimer" className="hover:text-primary transition-colors">
+            Disclaimer
+          </Link>
+        </nav>
       </div>
     </footer>
   );
