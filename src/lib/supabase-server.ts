@@ -7,11 +7,24 @@ function config() {
   return { url, key };
 }
 
+export function supabaseHeaders(key: string, extraHeaders?: HeadersInit) {
+  const headers = new Headers(extraHeaders);
+  headers.set("apikey", key);
+
+  // The new opaque sb_secret_* / sb_publishable_* API keys are not JWTs.
+  // Sending one as a Bearer token makes Supabase try to validate it as a JWT.
+  if (!key.startsWith("sb_") && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${key}`);
+  }
+
+  return headers;
+}
+
 export async function supabaseRequest(path: string, init: RequestInit = {}) {
   const { url, key } = config();
   const response = await fetch(`${url}${path}`, {
     ...init,
-    headers: { apikey: key, Authorization: `Bearer ${key}`, ...init.headers },
+    headers: supabaseHeaders(key, init.headers),
     cache: "no-store",
   });
   if (!response.ok) {

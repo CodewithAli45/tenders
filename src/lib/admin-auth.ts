@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
+import { supabaseHeaders } from "@/lib/supabase-server";
 
 const SESSION_COOKIE = "govtender_admin_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 12;
@@ -54,7 +55,7 @@ export function clearAdminSessionCookie() {
 async function getAdminCredential(): Promise<AdminCredential | null> {
   const { url, serviceRoleKey } = supabaseConfig();
   const response = await fetch(`${url}/rest/v1/admin_credentials?select=password_hash,password_salt&password_salt=not.is.null&limit=1`, {
-    headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
+    headers: supabaseHeaders(serviceRoleKey),
     cache: "no-store",
   });
   if (!response.ok) {
@@ -85,7 +86,7 @@ export async function initializeAdminPassword(password: string) {
   const passwordHash = scryptSync(password, passwordSalt, 64).toString("base64");
   const response = await fetch(`${url}/rest/v1/admin_credentials`, {
     method: "POST",
-    headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+    headers: supabaseHeaders(serviceRoleKey, { "Content-Type": "application/json", Prefer: "return=minimal" }),
     body: JSON.stringify({ password_hash: passwordHash, password_salt: passwordSalt }),
     cache: "no-store",
   });
