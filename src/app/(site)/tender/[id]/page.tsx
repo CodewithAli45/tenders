@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import DOMPurify from "isomorphic-dompurify";
 import { getPublicTenderById } from "@/lib/public-tenders";
 
 type Props = { params: Promise<{ id: string }> };
@@ -47,12 +46,22 @@ function DetailSection({ title, children }: { title: string; children: ReactNode
 
 function SafeTenderContent({ html }: { html: unknown }) {
   const source = typeof html === "string" ? html : "";
-  const safeHtml = source
-    ? DOMPurify.sanitize(source, { USE_PROFILES: { html: true } })
-    : "";
+  const text = source
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|li|tr|h[1-6])\s*>/gi, "\n")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/[ \t]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .trim();
 
-  return safeHtml ? (
-    <div className="rich-text-surface text-sm" dangerouslySetInnerHTML={{ __html: safeHtml }} />
+  return text ? (
+    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{text}</p>
   ) : (
     <p className="text-sm italic text-muted-foreground">Not specified.</p>
   );
