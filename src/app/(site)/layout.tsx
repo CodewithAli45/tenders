@@ -9,7 +9,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
         <SiteHeader />
 
         {/* Main Full-Screen Layout Container */}
-        <div className="site-main-layout flex w-full flex-1 pt-28 px-[1%] pb-[env(safe-area-inset-bottom)]">
+        <div className="site-main-layout flex w-full flex-1 px-[1%] pb-[env(safe-area-inset-bottom)]">
           <main className="min-w-0 w-full flex-1 pb-16">{children}</main>
         </div>
 

@@ -3,6 +3,8 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
+  --site-announcement-height: 2.25rem;
+  --site-nav-height: 4rem;
   --background: #f7f7f5;
   --foreground: #202326;
   --card: #ffffff;
@@ -105,6 +107,18 @@ body {
 
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+.site-nav {
+  top: var(--site-announcement-height);
+}
+
+.site-mobile-drawer {
+  top: var(--site-announcement-height);
+}
+
+.site-main-layout {
+  padding-top: calc(var(--site-announcement-height) + var(--site-nav-height) + 0.75rem);
 }
 
 .pwa-mobile-only {
@@ -342,11 +356,11 @@ button,
   }
 
   .site-nav {
-    top: env(safe-area-inset-top);
+    top: env(safe-area-inset-top, 0px);
   }
 
   .site-main-layout {
-    padding-top: calc(4rem + env(safe-area-inset-top));
+    padding-top: calc(var(--site-nav-height) + env(safe-area-inset-top, 0px));
   }
 
   .site-search-desktop,
@@ -356,6 +370,6 @@ button,
   }
 
   .site-mobile-drawer {
-    top: calc(4rem + env(safe-area-inset-top));
+    top: calc(var(--site-nav-height) + env(safe-area-inset-top, 0px));
   }
 }

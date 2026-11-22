@@ -98,7 +98,7 @@ export function SiteHeader() {
       </div>
 
       {/* Main Navigation Bar */}
-      <nav className="site-nav fixed top-9 z-50 w-full border-b border-border/80 bg-card/90 backdrop-blur-xl shadow-xs">
+      <nav className="site-nav fixed z-50 w-full border-b border-border/80 bg-card/90 backdrop-blur-xl shadow-xs">
         <div className="flex h-16 w-full items-center justify-between px-[2%] gap-4">
           <button
             onClick={() => setMobileMenuOpen(true)}
@@ -271,7 +271,7 @@ export function SiteHeader() {
         initial={{ x: "-100%" }}
         animate={{ x: mobileMenuOpen ? "0%" : "-100%" }}
         transition={{ type: "tween", duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
-        className="site-mobile-drawer fixed top-9 bottom-0 left-0 z-[120] flex w-[85%] max-w-sm flex-col overflow-y-auto border-r border-border bg-card pb-[env(safe-area-inset-bottom)] shadow-2xl lg:hidden"
+        className="site-mobile-drawer fixed bottom-0 left-0 z-[120] flex w-[85%] max-w-sm flex-col overflow-y-auto border-r border-border bg-card pb-[env(safe-area-inset-bottom)] shadow-2xl lg:hidden"
         aria-hidden={!mobileMenuOpen}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
