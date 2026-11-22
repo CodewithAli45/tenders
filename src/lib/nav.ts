@@ -41,9 +41,9 @@ export const navItems: NavItem[] = [
     label: "Tools",
     dropdown: [
       { label: "Tender Document Tools", href: "/tender-document-tools", description: "Prepare your tender documents for portal submission", icon: FileText, target: "_blank" },
-      { label: "Calculator", href: "/tools/calculator", description: "EMD & cost estimation toolkit", icon: Calculator },
+      { label: "Calculator", href: "/tools/calculator", description: "BOQ item costing and GST calculator", icon: Calculator, target: "_blank" },
       { label: "AutoCAD Viewer", href: "/tools/autocad-viewer", description: "Preview DWG & blueprint files", icon: Layers, target: "_blank" },
-      { label: "MS Excel", href: "/tools/ms-excel", description: "Export & process tender BOQs", icon: FileSpreadsheet },
+      { label: "MS Excel", href: "/tools/ms-excel", description: "Edit, calculate, and export tender BOQs", icon: FileSpreadsheet, target: "_blank" },
     ],
   },
   {

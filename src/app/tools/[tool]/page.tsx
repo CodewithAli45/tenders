@@ -1,10 +1,14 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { AutoCadViewer } from "@/components/autocad-viewer";
+import { MsExcelTool } from "@/components/ms-excel-tool";
+import { CostCalculator } from "@/components/cost-calculator";
 
 export default async function ToolPage({ params }: { params: Promise<{ tool: string }> }) {
   const { tool } = await params;
   if (tool === "autocad-viewer") return <AutoCadViewer />;
+  if (tool === "ms-excel") return <MsExcelTool />;
+  if (tool === "calculator") return <CostCalculator />;
   const toolName = tool.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
   return (

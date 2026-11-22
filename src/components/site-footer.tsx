@@ -58,9 +58,11 @@ export function SiteFooter() {
               <li>
                 <Link
                   href="/tools/calculator"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:text-primary transition-colors"
                 >
-                  EMD Calculator
+                  BOQ Cost Calculator
                 </Link>
               </li>
               <li>
